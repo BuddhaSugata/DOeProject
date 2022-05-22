@@ -1,5 +1,4 @@
 #pragma once
-#include "stdbool.h"
 #ifdef __cplusplus
 
 extern "C" {
@@ -24,6 +23,8 @@ int set_gpio(int channel, int value);
  * @return false 
  */
 int get_gpio(int channel);
+
+
 
 #ifdef __cplusplus
 

@@ -1,6 +1,7 @@
 #include "Arduino.h"
 #include "gpio.h"
-#include "APP/indication.h"
+
+//#include "servo360.h"
 
 int set_gpio(int channel, int value){
     digitalWrite(channel, value);
@@ -11,3 +12,4 @@ int get_gpio(int channel){
     digitalRead(channel);
     return true;
 }
+

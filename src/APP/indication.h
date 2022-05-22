@@ -5,7 +5,7 @@ extern "C" {
 
 #endif
 
-void toggle_indication(int state, int time, int delay);
+void toggle_indication(int time_on, int time_off);
 
 #ifdef __cplusplus
 

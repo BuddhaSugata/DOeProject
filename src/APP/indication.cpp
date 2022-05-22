@@ -1,16 +1,15 @@
 #include "indication.h"
-#include "HAL/leds.h"
 #include "unistd.h"
+#include "HAL/leds.h"
 
-void toggle_indication(int state, int time, int delay)
+void toggle_indication(int time_on, int time_off)
 {
-    while (state)
+    while (true)
     {
         set_onboard_led(1);
-        sleep(time);
+        usleep(time_on);
         set_onboard_led(0);
-        sleep(delay);
+        usleep(time_off);
     }
 }
-
 
