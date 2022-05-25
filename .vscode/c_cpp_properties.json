@@ -10,12 +10,9 @@
             "includePath": [
                 "d:/DOeProject/include",
                 "d:/DOeProject/src",
-<<<<<<< HEAD
                 "d:/DOeProject/lib/Servo/src",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src",
-=======
->>>>>>> 347ddb0a5c007be4ab7e041548ca93d2c0ed7ac0
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/config",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include",
@@ -187,10 +184,7 @@
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/fb_gfx/include",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/cores/esp32",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/variants/esp32",
-<<<<<<< HEAD
-                "d:/DOeProject/lib/IMU",
-=======
->>>>>>> 347ddb0a5c007be4ab7e041548ca93d2c0ed7ac0
+                "d:/DOeProject/lib/IMU/src",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/AsyncUDP/src",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src",
@@ -218,11 +212,6 @@
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/USB/src",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/Update/src",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WebServer/src",
-<<<<<<< HEAD
-=======
-                "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src",
-                "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
->>>>>>> 347ddb0a5c007be4ab7e041548ca93d2c0ed7ac0
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WiFiProv/src",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                 ""
@@ -232,12 +221,9 @@
                 "path": [
                     "d:/DOeProject/include",
                     "d:/DOeProject/src",
-<<<<<<< HEAD
                     "d:/DOeProject/lib/Servo/src",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src",
-=======
->>>>>>> 347ddb0a5c007be4ab7e041548ca93d2c0ed7ac0
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/config",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/newlib/platform_include",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include",
@@ -409,10 +395,7 @@
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/fb_gfx/include",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/cores/esp32",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/variants/esp32",
-<<<<<<< HEAD
-                    "d:/DOeProject/lib/IMU",
-=======
->>>>>>> 347ddb0a5c007be4ab7e041548ca93d2c0ed7ac0
+                    "d:/DOeProject/lib/IMU/src",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/AsyncUDP/src",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src",
@@ -440,22 +423,13 @@
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/USB/src",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/Update/src",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WebServer/src",
-<<<<<<< HEAD
-=======
-                    "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src",
-                    "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
->>>>>>> 347ddb0a5c007be4ab7e041548ca93d2c0ed7ac0
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WiFiProv/src",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                     ""
                 ]
             },
             "defines": [
-<<<<<<< HEAD
                 "PLATFORMIO=60001",
-=======
-                "PLATFORMIO=50205",
->>>>>>> 347ddb0a5c007be4ab7e041548ca93d2c0ed7ac0
                 "ARDUINO_ESP32_DEV",
                 "HAVE_CONFIG_H",
                 "MBEDTLS_CONFIG_FILE=\"mbedtls/esp_config.h\"",

@@ -1,18 +1,36 @@
 #include "APP/indication.h"
 #include "Arduino.h"
+#include "Wire.h"
 #include "ESP32Servo360.h"
+#include "I2Cdev.h"
+#include "MPU6050.h"
 
 ESP32Servo360 servo;
+MPU6050 accelgyro;
+
+int16_t ax, ay, az;
+int16_t gx, gy, gz;
 
 void setup(){
     Serial.begin(115200); // Open the console to see the result of the calibration.
     pinMode(2, OUTPUT);
     pinMode(18, OUTPUT);
     pinMode(26, INPUT);
-    servo.attach(18,26); // Control pin (white), signal pin (yellow).
-    servo.adjustSignal(2, 1000); // Setting manually the wrong PWMs, defaults are 32 & 1067, min then max.
-    servo.setMinimalForce(8); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
-    servo.calibrate(); // Setting accurate PWMs by comparing while spinning slowly.
+    Wire.begin();
+
+    // initialize device
+    Serial.println("Initializing I2C devices...");
+    accelgyro.initialize();
+
+    // verify connection
+    Serial.println("Testing device connections...");
+    Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+
+
+    // servo.attach(18,26); // Control pin (white), signal pin (yellow).
+    // servo.adjustSignal(2, 1000); // Setting manually the wrong PWMs, defaults are 32 & 1067, min then max.
+    // servo.setMinimalForce(8); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
+    // servo.calibrate(); // Setting accurate PWMs by comparing while spinning slowly.
 }
 
 //void loop(){
@@ -38,6 +56,25 @@ void setup(){
 // }
 
 void loop() {
+    // read raw accel/gyro measurements from device
+    accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+
+    // these methods (and a few others) are also available
+    //accelgyro.getAcceleration(&ax, &ay, &az);
+    //accelgyro.getRotation(&gx, &gy, &gz);
+
+        // display tab-separated accel/gyro x/y/z values
+        Serial.print("a/g:\t");
+        Serial.print(ax); Serial.print("\t");
+        Serial.print(ay); Serial.print("\t");
+        Serial.print(az); Serial.print("\t");
+        Serial.print(gx); Serial.print("\t");
+        Serial.print(gy); Serial.print("\t");
+        Serial.println(gz);
+
+
+    delay(5000);
+
 //       servo.rotateTo(0);
 //   servo.wait(); // Turn the motor by hand.
 //   delay(3000);
