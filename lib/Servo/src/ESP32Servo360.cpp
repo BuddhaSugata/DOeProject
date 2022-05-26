@@ -83,7 +83,7 @@ void ESP32Servo360::adjustSignal(int minPulseWidth, int maxPulseWidth)
     _minPulseWidth = constrain(minPulseWidth, 0, maxPulseWidth);
 }
 
-void ESP32Servo360::calibrate()
+void ESP32Servo360::calibrate(int show_origAngle)
 {
     _disableRunningTask();
     _setRPM(12);
@@ -95,7 +95,9 @@ void ESP32Servo360::calibrate()
 
     while (origAngle + 720 > _angle)
     {
-        Serial.println(origAngle);
+        if (show_origAngle) {
+            Serial.println(origAngle);
+        }
         delay(1);
         _computeAngle();
 
