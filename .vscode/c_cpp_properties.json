@@ -10,6 +10,8 @@
             "includePath": [
                 "d:/DOeProject/include",
                 "d:/DOeProject/src",
+                "d:/DOeProject/lib/IMU/src",
+                "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                 "d:/DOeProject/lib/Servo/src",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src",
@@ -184,7 +186,8 @@
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/fb_gfx/include",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/cores/esp32",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/variants/esp32",
-                "d:/DOeProject/lib/IMU/src",
+                "d:/DOeProject/lib/QuarkTS/include",
+                "d:/DOeProject/lib/QuarkTS",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/AsyncUDP/src",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src",
@@ -213,7 +216,6 @@
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/Update/src",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WebServer/src",
                 "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WiFiProv/src",
-                "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                 ""
             ],
             "browse": {
@@ -221,6 +223,8 @@
                 "path": [
                     "d:/DOeProject/include",
                     "d:/DOeProject/src",
+                    "d:/DOeProject/lib/IMU/src",
+                    "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                     "d:/DOeProject/lib/Servo/src",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WiFi/src",
@@ -395,7 +399,8 @@
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/fb_gfx/include",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/cores/esp32",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/variants/esp32",
-                    "d:/DOeProject/lib/IMU/src",
+                    "d:/DOeProject/lib/QuarkTS/include",
+                    "d:/DOeProject/lib/QuarkTS",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/AsyncUDP/src",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src",
@@ -424,7 +429,6 @@
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/Update/src",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WebServer/src",
                     "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/WiFiProv/src",
-                    "C:/Users/User/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
                     ""
                 ]
             },

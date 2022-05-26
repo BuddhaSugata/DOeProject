@@ -41,7 +41,7 @@ public:
     void wait();
     void stop();
     void hold();
-    void calibrate();
+    void calibrate(int show_origAngle);
     void release();
     void spin(float rpm);
     void spin(void);
@@ -99,7 +99,7 @@ private:
     static void IRAM_ATTR _isr(void *arg)
     {
 
-        ESP32Servo360 *s = static_cast<ESP32Servo360 *>(arg);
+        ESP32Servo360 *s = (ESP32Servo360 *)arg;
 
         if (digitalRead(s->_feedbackPin))
         { //FALLING
