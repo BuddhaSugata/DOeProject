@@ -362,11 +362,11 @@ void ESP32Servo360::_isr(void *arg)
 
     ESP32Servo360 *s = (ESP32Servo360 *)arg;
 
-    digitalRead(s->_feedbackPin);
+    if (digitalRead(s->_feedbackPin))
     { // FALLING
         s->_prevTime = esp_timer_get_time();
     }
-    // else
+    else
     {
         s->_pwmValue = esp_timer_get_time() - s->_prevTime;
     }

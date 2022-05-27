@@ -27,6 +27,7 @@ int get_gpio(int channel);
 int init_LServo(void);
 void rotate_LServo(float speed);
 int get_LServoAngle(void);
+void set_LServoOffset(int offsetAngle);
 
 #ifdef __cplusplus
 

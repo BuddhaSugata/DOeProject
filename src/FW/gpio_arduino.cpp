@@ -17,7 +17,7 @@ int get_gpio(int channel){
 }
 
 int get_LServoAngle(void){
-    return (uint8_t)LServo.getAngle();
+    return (int)LServo.getAngle();
 }
 
 int init_LServo(void){
@@ -31,4 +31,8 @@ int init_LServo(void){
 
 void rotate_LServo(float speed){
     LServo.spin(speed);
+}
+
+void set_LServoOffset(int offsetAngle){
+    LServo.setOffset(offsetAngle);
 }

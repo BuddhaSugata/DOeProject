@@ -2,7 +2,8 @@
 #include "FW/gpio.h"
 #include "Arduino.h"
 #include "Wire.h"
-#include "ESP32Servo360.h"
+#include "WiFi.h"
+#include "WiFiUdp.h"
 #include "I2Cdev.h"
 #include "MPU6050.h"
 
@@ -12,9 +13,10 @@ WiFiUDP udp;
 
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
-uint8_t angle[1000];
+uint16_t angle, counter = 0;
+int udp_data_vectors_length = 500;
+uint8_t a0[500], a1[500];
 // int time[1000];
-int counter = 0;
 
 /* WiFi network name and password */
 const char * ssid = "FRITZ!Box 7530 ZG";
@@ -65,8 +67,9 @@ void setup(){
     // Serial.println("Testing device connections...");
     // Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
-    
-
+    set_LServoOffset(get_LServoAngle());
+    Serial.print("Init LServo Angle is ");
+    Serial.println(get_LServoAngle());
 }
 
 //void loop(){
@@ -94,30 +97,32 @@ void setup(){
 void loop() {
     // toggle_indication(&OM_INIT);
 
-    if (counter < 1000){
+    if (counter < udp_data_vectors_length){
         rotate_LServo(140);
-        angle[counter] = get_LServoAngle();
+        angle = get_LServoAngle();
+        a0[counter] = angle % 0x00ff;
+        a1[counter] = angle / 0x00ff;
         // time[counter] = esp_timer_get_time();
-        Serial.print("Angle is ");
-        Serial.println(angle[counter]);
-        usleep(1000);
+        // Serial.print("a1 and a0 are ");
+        // Serial.println(angle);
+        usleep(1e4);
         // Serial.print(" at time point ");
         // Serial.println(time[counter]);
         counter++;
     }
-    else {
+    else if (counter == udp_data_vectors_length){
         rotate_LServo(0);
-    
-    // uint8_t buffer[50] = { 0, 1, 2 ,3 ,4,5,6,7,8,9};
 
-    //send buffer to server
-    udp.beginPacket(server_ipaddress, udp_port);
-    udp.write(angle, 1000);
-    udp.endPacket();
-    memset(angle, 0, 1000);
-    //processing incoming packet, must be called before reading the buffer
-    udp.parsePacket();
+        //send buffer to server
+        udp.beginPacket(server_ipaddress, udp_port);
+        udp.write(a0, udp_data_vectors_length);
+        udp.write(a1, udp_data_vectors_length);
+        udp.endPacket();
+        udp.stop();
     }
+    // //processing incoming packet, must be called before reading the buffer
+    // udp.parsePacket();
+
     // //receive response from server, it will be HELLO WORLD
     // if(udp.read(buffer, 50) > 0){
     //     Serial.print("Server to client: ");
