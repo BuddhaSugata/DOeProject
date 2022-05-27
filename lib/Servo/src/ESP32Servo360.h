@@ -77,120 +77,13 @@ private:
     void _setRPM(float rpm);
 
     //utils
-    static float _fmap(float x, float in_min, float in_max, float out_min, float out_max)
-    {
-        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-    }
-
-    static int8_t _sgn(int val)
-    {
-        if (val < 0)
-            return -1;
-        if (val == 0)
-            return 0;
-        return 1;
-    }
-
-    static float easeInOutQuad(float t)
-    {
-        return t < 0.5 ? 2 * t * t : t * (4 - 2 * t) - 1;
-    }
-
-    static void IRAM_ATTR _isr(void *arg)
-    {
-
-        ESP32Servo360 *s = (ESP32Servo360 *)arg;
-
-        if (digitalRead(s->_feedbackPin))
-        { //FALLING
-            s->_prevTime = esp_timer_get_time();
-        }
-        else
-        {
-            s->_pwmValue = esp_timer_get_time() - s->_prevTime;
-        }
-    }
-
-    static void _updateHold(void *arg)
-    {
-        ESP32Servo360 *s = static_cast<ESP32Servo360 *>(arg);
-        for (;;)
-        { // infinite loop
-            s->_computeAngle();
-            s->_computeTarget();
-            vTaskDelay(1 / portTICK_PERIOD_MS);
-        }
-    }
-
-    static void _updateLoop(void *arg)
-    {
-        ESP32Servo360 *s = static_cast<ESP32Servo360 *>(arg);
-
-        byte len = 32;
-        int samples[len];
-        int n = 100;
-        byte slot = 0;
-        int total = n * len;
-
-        for (byte i = 0; i < len; i++)
-        {
-            samples[i] = n;
-        }
-
-        for (;;)
-        { // infinite loop
-
-            s->_computeAngle();
-            s->_computeTarget();
-            int speed = round(s->_speed);
-
-            total = total - samples[slot] + speed;
-            samples[slot] = speed;
-            slot = (slot + 1) % len;
-
-            if (abs((float)total / len - speed) < 1 && abs(speed) < 6)
-            {
-                s->_updateHandle = NULL;
-                vTaskDelete(NULL);
-            }
-
-            vTaskDelay(1 / portTICK_PERIOD_MS);
-        }
-    }
-
-    static void _updateEase(void *arg)
-    {
-        ESP32Servo360 *s = static_cast<ESP32Servo360 *>(arg);
-
-        s->_computeAngle();
-        float origAngle = s->_angle; // Get complete angle.
-        float currAngle = origAngle;
-        float peak = 0.5;
-        float t = 0;
-        float minForce = min(s->_minTorque + s->_minRpm, (float)s->_rpm);
-
-
-        int direction = _sgn(s->_target - origAngle);
-
-        while (t < 1.0)
-        {
-            Serial.println(t);
-            s->_computeAngle();
-            float currAngle = s->_angle;
-            t = _fmap(currAngle, origAngle, s->_target, 0, 1);
-
-            float e = (easeInOutQuad(t) - peak);
-            float speed = _fmap(abs(e), 0, peak, s->_rpm, minForce);
-            s->_setRPM(speed * direction);
-            vTaskDelay(1 / portTICK_PERIOD_MS);
-        }
-
-        vTaskDelay(50 / portTICK_PERIOD_MS);
-
-        s->_setRPM(0);
-        s->_updateHandle = NULL;
-        vTaskDelete(NULL);
-    }
+    static float _fmap(float x, float in_min, float in_max, float out_min, float out_max);
+    static int8_t _sgn(int val);
+    static float easeInOutQuad(float t);
+    static void IRAM_ATTR _isr(void *arg);
+    static void _updateHold(void *arg);
+    static void _updateLoop(void *arg);
+    static void _updateEase(void *arg);
 
     static int channel_next_free;
 
