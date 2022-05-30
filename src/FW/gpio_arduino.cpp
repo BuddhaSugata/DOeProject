@@ -36,3 +36,7 @@ void rotate_LServo(float speed){
 void set_LServoOffset(int offsetAngle){
     LServo.setOffset(offsetAngle);
 }
+
+int getLServoSpeed(void){
+    return LServo.getSpeed();
+}

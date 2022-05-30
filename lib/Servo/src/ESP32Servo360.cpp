@@ -24,7 +24,14 @@ ESP32Servo360::~ESP32Servo360()
 {
     detach();
 }
-
+/**
+ * @brief Attach to the correct pins of your servo.
+ * 
+ * @param ctrlPin is the white cable.
+ * @param feedbackPin is the yellow cable.
+ * @return true 
+ * @return false 
+ */
 bool ESP32Servo360::attach(int ctrlPin, int feedbackPin)
 {
 
@@ -64,25 +71,46 @@ bool ESP32Servo360::attach(int ctrlPin, int feedbackPin)
 
     return true;
 }
-
+/**
+ * @brief If you decide to change the orientation of your motor, you can offset its zero position.
+ * 
+ * @param offsetAngle 
+ */
 void ESP32Servo360::setOffset(int offsetAngle)
 {
     float trueTarget = _target - _offsetAngle;
     _offsetAngle = offsetAngle;
     _target = trueTarget + _offsetAngle;
 }
-
+/**
+ * @brief To prevent any bouncing, especially due to high RPM.
+ * You can start the deceleration to a higher angle from the target angle.
+ * Default is set to 180 degrees.
+ * 
+ * @param deceleration 
+ */
 void ESP32Servo360::setDeceleration(int deceleration)
 {
     _deceleration = deceleration;
 }
-
+/**
+ * @brief For better readable angle accuracy, manually set the PWM signal of the internal Hall Effect Sensor.
+ * Get the values with the method servo.calibrate();.
+ * 
+ * @param minPulseWidth Default minPulseWidth is 32. Signal at 0 degrees.
+ * @param maxPulseWidth Default maxPulseWidth is 1067. Signal at ~360 degrees.
+ */
 void ESP32Servo360::adjustSignal(int minPulseWidth, int maxPulseWidth)
 {
     _maxPulseWidth = constrain(maxPulseWidth, 0, 1500);
     _minPulseWidth = constrain(minPulseWidth, 0, maxPulseWidth);
 }
-
+/**
+ * @brief For better readable angle accuracy, automatically set the PWM signal of the internal Hall Effect Sensor.
+ * The servo will turn and give you the result through Serial.
+ * 
+ * @param show_origAngle 
+ */
 void ESP32Servo360::calibrate(int show_origAngle)
 {
     _disableRunningTask();
@@ -114,69 +142,123 @@ void ESP32Servo360::calibrate(int show_origAngle)
     Serial.print(", maximal PWM: ");
     Serial.println(_maxPulseWidth);
 }
-
+/**
+ * @brief Spin clockwise or anticlockwise at a the default RPM if the parameter unset.
+ * Setting the parameter won't change the saved RPM of the servo. Instead use the method servo.setSpeed(); . 
+ * Value must be between -140 and 140.
+ * @param rpm 
+ */
 void ESP32Servo360::spin(float rpm)
 {
     _disableRunningTask();
     _setRPM(rpm);
 }
-
+/**
+ * @brief Spin clockwise or anticlockwise at a the default RPM if the parameter unset.
+ * Setting the parameter won't change the saved RPM of the servo. Instead use the method servo.setSpeed(); . 
+ * Value must be between -140 and 140.
+ */
 void ESP32Servo360::spin(void)
 {
     _disableRunningTask();
     _setRPM(_rpm);
 }
-
+/**
+ * @brief Wait for the motor to finish its rotation. Will hold the execution of the main loop().
+ * 
+ */
 void ESP32Servo360::wait()
 {
     while (_updateHandle != NULL) {
         delay(1);
     } 
 }
-
+/**
+ * @brief true if servo is still executing a rotation or holding an angle.
+ * Returns bool.
+ * 
+ * @return true 
+ * @return false 
+ */
 bool ESP32Servo360::busy()
 {
     return _updateHandle = NULL;
 }
-
+/**
+ * @brief Change the maximum RPM (Rotation Per Minute) of your servo. Default is 70 RPM.
+ * 
+ * @param maxRpm 
+ */
 void ESP32Servo360::setSpeed(float maxRpm)
 {
     _rpm = constrain(maxRpm, -MAX_RPM, MAX_RPM);
     _minRpm = constrain(_minRpm, 0, _rpm);
 }
-
+/**
+ * @brief For easing rotations only, add more force when speed is minimal (at start & end of movement).
+ * Default is 5.
+ * 
+ * @param minRpm 
+ */
 void ESP32Servo360::setAdditionalTorque(float minRpm) {
     _minRpm = constrain(abs(minRpm), 0, _rpm);
 }
-
+/**
+ * @brief Minimal force required for the servo to move. minimal force may barely move the servo, bigger force may do infinite bounces.
+ * Default is 7.
+ * 
+ * @param minTorque 
+ */
 void ESP32Servo360::setMinimalForce(float minTorque)
 {
     _minTorque = max(abs(minTorque), (float)0);
 }
-
+/**
+ * @brief Rotate from current position.
+ * 
+ * @param angle 
+ */
 void ESP32Servo360::rotate(float angle)
 {
     _target += angle;
     _beginLoop();
 }
-
+/**
+ * @brief Rotate to a specific position.
+ * 
+ * @param target 
+ */
 void ESP32Servo360::rotateTo(float target)
 {
     _target = target + _offsetAngle;
     _beginLoop();
 }
+/**
+ * @brief Rotate to a given angle with a ease-in-out-quad move.
+ * 
+ * @param target 
+ */
 void ESP32Servo360::easeRotateTo(float target)
 {
     _target = target + _offsetAngle;
     _beginEase();
 }
-
+/**
+ * @brief Rotate by given angle with a ease-in-out-quad move.
+ * 
+ * @param angle 
+ */
 void ESP32Servo360::easeRotate(float angle)
 {
     _target += angle;
     _beginEase();
 }
-
+/**
+ * @brief Disconnect the servo from its pins.
+ * 
+ * @return true 
+ * @return false 
+ */
 bool ESP32Servo360::detach()
 {
     if (!this->attached())
@@ -192,35 +274,60 @@ bool ESP32Servo360::detach()
     _resetFields();
     return true;
 }
-
+/**
+ * @brief Get the amount of rotation. Angle will go below 0 and above 360 degrees.
+ * Returns a float.
+ * 
+ * @return float 
+ */
 float ESP32Servo360::getAngle()
 {
     _computeAngle();
     return _angle - _offsetAngle;
 }
-
+/**
+ * @brief Get number of turns. This will be reset after a reboot of the board.
+ * Returns int.
+ * 
+ * @return int 
+ */
 int ESP32Servo360::getTurns()
 {
     float angle = getAngle();
     return (angle - fmod(angle, 360)) / 360;
 }
-
+/**
+ * @brief Get the orientation between 0 to 360 degrees.
+ * Returns a float.
+ * 
+ * @return float 
+ */
 float ESP32Servo360::getOrientation()
 {
     float angle = getAngle();
     return fmod(angle, 360);
 }
-
+/**
+ * @brief Reset the number of turns.
+ * 
+ */
 void ESP32Servo360::clearTurns()
 {
     _angle = _orientation;
 }
-
+/**
+ * @brief Returns the angle speed in rpm (integer) set by setSpeed();.
+ * 
+ * @return int 
+ */
 int ESP32Servo360::getSpeed()
 {
     return _rpm;
 }
-
+/**
+ * @brief Stop and hold the servo to its current angle. Will be harder to turn the motor by hand. Disable this state by executing another rotation or calling servo.release();.
+ * 
+ */
 void ESP32Servo360::hold()
 {
 
@@ -234,19 +341,32 @@ void ESP32Servo360::hold()
         _beginHold();
     }
 }
+/**
+ * @brief Releases the servo from its hold state.
+ * 
+ */
 void ESP32Servo360::release()
 {
     _hold = false;
     stop();
 }
-
+/**
+ * @brief true if servo is attached to pins. Returns bool.
+ * 
+ * @return true 
+ * @return false 
+ */
 bool ESP32Servo360::attached() const { return _ctrlPin != PIN_NOT_ATTACHED; }
-
+/**
+ * @brief Stop the rotation of the servo.
+ * 
+ */
 void ESP32Servo360::stop()
 {
     _disableRunningTask();
 }
 
+// The following ones are the internal functions.
 void ESP32Servo360::_computeAngle()
 {
     float newOrientation = _fmap(_pwmValue, _minPulseWidth, _maxPulseWidth, 0, 360);

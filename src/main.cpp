@@ -103,8 +103,8 @@ void loop() {
         a0[counter] = angle % 0x00ff;
         a1[counter] = angle / 0x00ff;
         // time[counter] = esp_timer_get_time();
-        // Serial.print("a1 and a0 are ");
-        // Serial.println(angle);
+        // Serial.print("RPM is ");
+        // Serial.println(getLServoSpeed());
         usleep(1e4);
         // Serial.print(" at time point ");
         // Serial.println(time[counter]);
@@ -119,6 +119,7 @@ void loop() {
         udp.write(a1, udp_data_vectors_length);
         udp.endPacket();
         udp.stop();
+        // counter++;
     }
     // //processing incoming packet, must be called before reading the buffer
     // udp.parsePacket();

@@ -28,6 +28,7 @@ int init_LServo(void);
 void rotate_LServo(float speed);
 int get_LServoAngle(void);
 void set_LServoOffset(int offsetAngle);
+int getLServoSpeed(void);
 
 #ifdef __cplusplus
 
