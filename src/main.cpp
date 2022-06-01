@@ -13,9 +13,9 @@ WiFiUDP udp;
 
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
-uint16_t angle, counter = 0;
-int udp_data_vectors_length = 500;
-uint8_t a0[500], a1[500];
+uint16_t angle_speed, counter = 0;
+int udp_data_vectors_length = 700;
+uint8_t a0[700], a1[700];
 // int time[1000];
 
 /* WiFi network name and password */
@@ -98,27 +98,27 @@ void loop() {
     // toggle_indication(&OM_INIT);
 
     if (counter < udp_data_vectors_length){
-        rotate_LServo(100); // 1 - not works, 3 is already acceptable (with default torque 7)
-        angle = get_LServoAngle();
-        a0[counter] = angle % 0x00ff;
-        a1[counter] = angle / 0x00ff;
+        rotate_LServo(counter / 70 * 14 ); // 1 - not works, 3 is already acceptable (with default torque 7)
+        angle_speed = getLServoSpeed();
+        a0[counter] = angle_speed % 0x00ff;
+        a1[counter] = angle_speed / 0x00ff;
         // time[counter] = esp_timer_get_time();
         Serial.print("RPM is ");
-        Serial.println(getLServoSpeed(),10);
+        Serial.print(getLServoSpeed(),10);
         usleep(1e5);
-        // Serial.print(" at time point ");
-        // Serial.println(time[counter]);
+        Serial.print("   Counter is ");
+        Serial.println(counter);
         counter++;
     }
     else if (counter == udp_data_vectors_length){
         rotate_LServo(0);
 
-        //send buffer to server
-        // udp.beginPacket(server_ipaddress, udp_port);
-        // udp.write(a0, udp_data_vectors_length);
-        // udp.write(a1, udp_data_vectors_length);
-        // udp.endPacket();
-        // udp.stop();
+        // send buffer to server
+        udp.beginPacket(server_ipaddress, udp_port);
+        udp.write(a0, udp_data_vectors_length);
+        udp.write(a1, udp_data_vectors_length);
+        udp.endPacket();
+        udp.stop();
         // counter++;
     }
     // //processing incoming packet, must be called before reading the buffer

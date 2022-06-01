@@ -15,6 +15,7 @@
 #error “This library only supports ESP32 boards for now.”
 #endif
 
+#define wraparound(deg) ((deg)<(-180)?(deg+=360):((deg)>(180)?(deg-=360):(deg)))
 // #define FILLARRAY(a,n) a[0]=n, memcpy( ((char*)a)+sizeof(a[0]), a, sizeof(a)-sizeof(a[0]) );
 
 class ESP32Servo360
@@ -27,7 +28,7 @@ class ESP32Servo360
     static const int CHANNEL_MAX_NUM = 16;
 
     static const int MAX_RPM = 140;
-    static const int MIN_RPM = 5; //ease minimal speed = MIN_RPM + MIN_TORQUE
+    static const int MIN_RPM = 10; //ease minimal speed = MIN_RPM + MIN_TORQUE
     static const int MIN_TORQUE = 7;
 
 public:
@@ -95,13 +96,13 @@ private:
 
     volatile uint16_t _pwmValue;
     volatile int64_t _prevTime;
-    volatile int64_t _timeStamp1;
-    volatile int64_t _timeStamp2;
+    volatile int64_t _timeStamp;
 
     float _orientation;
     float _angle;
     float _delta;
-    float _delta_time;
+    float _orientationStamp;
+    float _instantaneousSpeed;
     float _speed;
     int _rpm;
     float _minTorque;

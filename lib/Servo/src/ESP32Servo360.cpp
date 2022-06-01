@@ -14,7 +14,8 @@ ESP32Servo360::ESP32Servo360(int offsetAngle, int rpm, int deceleration, int min
     _maxPulseWidth = maxPulseWidth;
     _updateHandle = NULL;
     _speed = 0;
-    _delta = 0;
+    _instantaneousSpeed = 0;
+    _orientationStamp = 0;
 
     _hold = false;
     _pwmValue = -1; // unset
@@ -152,7 +153,10 @@ void ESP32Servo360::calibrate(int show_origAngle)
 void ESP32Servo360::spin(float rpm)
 {
     _disableRunningTask();
-    _setRPM(rpm);
+    rpm = constrain(rpm, -MAX_RPM, MAX_RPM);
+    rpm = constrain(rpm, MIN_RPM, -MIN_RPM); // range of stable feedback values [10, 140]
+    float u = (rpm - 6 ) / 1.3; // "open loop" controller 
+    _setRPM( u );
 }
 /**
  * @brief Spin clockwise or anticlockwise at a the default RPM if the parameter unset.
@@ -162,7 +166,8 @@ void ESP32Servo360::spin(float rpm)
 void ESP32Servo360::spin(void)
 {
     _disableRunningTask();
-    _setRPM(_rpm);
+    float u = ((float)_rpm - 6 ) / 1.3; // "open loop" controller 
+    _setRPM( u );
 }
 /**
  * @brief Wait for the motor to finish its rotation. Will hold the execution of the main loop().
@@ -287,9 +292,27 @@ float ESP32Servo360::getAngle()
     _computeAngle();
     return _angle - _offsetAngle;
 }
+/**
+ * @brief 
+ * 
+ * @return float 
+ */
 float ESP32Servo360::getSpeed()
 {
-    return ( _delta / 360 ) / ( _delta_time / 1e6F / 60 ) ; // ( degree_delta / 360 = rotation ) / ( delta_time in us / 1e6 / 60 = minute ) = rpm ; // 
+    float delta_time = (float)(esp_timer_get_time() - _timeStamp);
+    
+    if (delta_time > 1e3F){
+        float newOrientation = _fmap(_pwmValue, _minPulseWidth, _maxPulseWidth, 0, 360);
+        float delta_angle = newOrientation - _orientationStamp;
+        wraparound(delta_angle);
+        
+        _instantaneousSpeed = ( delta_angle / 360 ) / ( delta_time  / 1e6F / 60 ); // ( degree_delta / 360 = rotation ) / ( delta_time in us / 1e6 / 60 = minute ) = rpm 
+        
+        _timeStamp = esp_timer_get_time();
+        _orientationStamp = newOrientation;
+    }
+
+    return  _instantaneousSpeed; 
 }
 /**
  * @brief Get number of turns. This will be reset after a reboot of the board.
@@ -380,22 +403,12 @@ void ESP32Servo360::stop()
 void ESP32Servo360::_computeAngle()
 {
     float newOrientation = _fmap(_pwmValue, _minPulseWidth, _maxPulseWidth, 0, 360);
-    _delta = newOrientation - _orientation;
+    float delta = newOrientation - _orientation;
 
-    if (_delta > 180)
-    {
-        _delta -= 360;
-    }
-    else if (_delta < -180)
-    {
-        _delta += 360;
-    }
+    wraparound(delta);
 
-    _angle += _delta;
+    _angle += delta;
     _orientation = newOrientation;
-    _timeStamp1 = _timeStamp2;
-    _timeStamp2 = esp_timer_get_time();
-    _delta_time = (float) (_timeStamp2 - _timeStamp1);
 }
 
 void ESP32Servo360::_computeTarget()
