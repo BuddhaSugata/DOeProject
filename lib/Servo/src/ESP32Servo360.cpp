@@ -14,6 +14,7 @@ ESP32Servo360::ESP32Servo360(int offsetAngle, int rpm, int deceleration, int min
     _maxPulseWidth = maxPulseWidth;
     _updateHandle = NULL;
     _speed = 0;
+    _delta = 0;
 
     _hold = false;
     _pwmValue = -1; // unset
@@ -204,7 +205,8 @@ void ESP32Servo360::setAdditionalTorque(float minRpm) {
     _minRpm = constrain(abs(minRpm), 0, _rpm);
 }
 /**
- * @brief Minimal force required for the servo to move. minimal force may barely move the servo, bigger force may do infinite bounces.
+ * @brief Minimal force required for the servo to move.
+ * Minimal force may barely move the servo, bigger force may do infinite bounces.
  * Default is 7.
  * 
  * @param minTorque 
@@ -285,6 +287,10 @@ float ESP32Servo360::getAngle()
     _computeAngle();
     return _angle - _offsetAngle;
 }
+float ESP32Servo360::getSpeed()
+{
+    return ( _delta / 360 ) / ( _delta_time / 1e6F / 60 ) ; // ( degree_delta / 360 = rotation ) / ( delta_time in us / 1e6 / 60 = minute ) = rpm ; // 
+}
 /**
  * @brief Get number of turns. This will be reset after a reboot of the board.
  * Returns int.
@@ -320,7 +326,7 @@ void ESP32Servo360::clearTurns()
  * 
  * @return int 
  */
-int ESP32Servo360::getSpeed()
+int ESP32Servo360::getStatedSpeed()
 {
     return _rpm;
 }
@@ -367,22 +373,29 @@ void ESP32Servo360::stop()
 }
 
 // The following ones are the internal functions.
+/**
+ * @brief Computing the actual angle: _orientation, actualizing the total _angle value.
+ * 
+ */
 void ESP32Servo360::_computeAngle()
 {
     float newOrientation = _fmap(_pwmValue, _minPulseWidth, _maxPulseWidth, 0, 360);
-    float delta = newOrientation - _orientation;
+    _delta = newOrientation - _orientation;
 
-    if (delta > 180)
+    if (_delta > 180)
     {
-        _angle -= 360;
+        _delta -= 360;
     }
-    else if (delta < -180)
+    else if (_delta < -180)
     {
-        _angle += 360;
+        _delta += 360;
     }
 
-    _angle += delta;
+    _angle += _delta;
     _orientation = newOrientation;
+    _timeStamp1 = _timeStamp2;
+    _timeStamp2 = esp_timer_get_time();
+    _delta_time = (float) (_timeStamp2 - _timeStamp1);
 }
 
 void ESP32Servo360::_computeTarget()

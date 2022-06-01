@@ -58,9 +58,10 @@ public:
     void setSpeed(float maxRpm);
     void setMinimalForce(float minTorque);
     void setAdditionalTorque(float minRpm);
-    int getSpeed();
+    int getStatedSpeed();
     void clearTurns();
     float getAngle();
+    float getSpeed();
     float getOrientation();
     int getTurns();
 
@@ -94,9 +95,13 @@ private:
 
     volatile uint16_t _pwmValue;
     volatile int64_t _prevTime;
+    volatile int64_t _timeStamp1;
+    volatile int64_t _timeStamp2;
 
     float _orientation;
     float _angle;
+    float _delta;
+    float _delta_time;
     float _speed;
     int _rpm;
     float _minTorque;

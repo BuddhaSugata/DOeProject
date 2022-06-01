@@ -98,14 +98,14 @@ void loop() {
     // toggle_indication(&OM_INIT);
 
     if (counter < udp_data_vectors_length){
-        rotate_LServo(140);
+        rotate_LServo(100); // 1 - not works, 3 is already acceptable (with default torque 7)
         angle = get_LServoAngle();
         a0[counter] = angle % 0x00ff;
         a1[counter] = angle / 0x00ff;
         // time[counter] = esp_timer_get_time();
-        // Serial.print("RPM is ");
-        // Serial.println(getLServoSpeed());
-        usleep(1e4);
+        Serial.print("RPM is ");
+        Serial.println(getLServoSpeed(),10);
+        usleep(1e5);
         // Serial.print(" at time point ");
         // Serial.println(time[counter]);
         counter++;
@@ -114,11 +114,11 @@ void loop() {
         rotate_LServo(0);
 
         //send buffer to server
-        udp.beginPacket(server_ipaddress, udp_port);
-        udp.write(a0, udp_data_vectors_length);
-        udp.write(a1, udp_data_vectors_length);
-        udp.endPacket();
-        udp.stop();
+        // udp.beginPacket(server_ipaddress, udp_port);
+        // udp.write(a0, udp_data_vectors_length);
+        // udp.write(a1, udp_data_vectors_length);
+        // udp.endPacket();
+        // udp.stop();
         // counter++;
     }
     // //processing incoming packet, must be called before reading the buffer
