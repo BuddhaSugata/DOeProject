@@ -25,10 +25,10 @@ class ESP32Servo360
     static const int DECELERATION = 180;     //start deceleration at a delta angle of
     static const int MIN_PULSE_WIDTH = 32;   // the shortest pulse sent by a servo 360
     static const int MAX_PULSE_WIDTH = 1067; // the longest pulse sent by a servo 360
-    static const int CHANNEL_MAX_NUM = 16;
+    static const int CHANNEL_MAX_NUM = 10;
 
     static const int MAX_RPM = 140;
-    static const int MIN_RPM = 10; //ease minimal speed = MIN_RPM + MIN_TORQUE
+    static const int MIN_RPM = 6; //ease minimal speed = MIN_RPM + MIN_TORQUE
     static const int MIN_TORQUE = 7;
 
 public:

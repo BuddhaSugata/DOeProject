@@ -1,5 +1,5 @@
 #include "APP/indication.h"
-#include "FW/gpio.h"
+#include "HAL/HAL.h""
 #include "Arduino.h"
 #include "Wire.h"
 #include "WiFi.h"
@@ -98,14 +98,14 @@ void loop() {
     // toggle_indication(&OM_INIT);
 
     if (counter < udp_data_vectors_length){
-        rotate_LServo(counter / 70 * 14 ); // 1 - not works, 3 is already acceptable (with default torque 7)
+        rotate_LServo(-counter * 14 / 70 ); // 1 - not works, 3 is already acceptable (with default torque 7)
         angle_speed = getLServoSpeed();
         a0[counter] = angle_speed % 0x00ff;
         a1[counter] = angle_speed / 0x00ff;
         // time[counter] = esp_timer_get_time();
         Serial.print("RPM is ");
         Serial.print(getLServoSpeed(),10);
-        usleep(1e5);
+        usleep(1e4);
         Serial.print("   Counter is ");
         Serial.println(counter);
         counter++;

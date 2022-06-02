@@ -153,10 +153,17 @@ void ESP32Servo360::calibrate(int show_origAngle)
 void ESP32Servo360::spin(float rpm)
 {
     _disableRunningTask();
-    rpm = constrain(rpm, -MAX_RPM, MAX_RPM);
-    rpm = constrain(rpm, MIN_RPM, -MIN_RPM); // range of stable feedback values [10, 140]
-    float u = (rpm - 6 ) / 1.3; // "open loop" controller 
-    _setRPM( u );
+    // range of stable feedback values [-140, -10] & [10, 140] 
+    // and zero to zero
+    if (rpm > 0){
+        rpm = constrain(rpm, MIN_RPM, MAX_RPM);
+        rpm = (rpm - 6 ) / 1.3; // "open loop" controller
+    } else if (rpm < 0) {
+        rpm = constrain(rpm, -MAX_RPM, -MIN_RPM);
+        rpm = (rpm + 6 ) / 1.3; // "open loop" controller
+    }
+
+    _setRPM( rpm );
 }
 /**
  * @brief Spin clockwise or anticlockwise at a the default RPM if the parameter unset.
@@ -165,9 +172,16 @@ void ESP32Servo360::spin(float rpm)
  */
 void ESP32Servo360::spin(void)
 {
+    int rpm = 0;
     _disableRunningTask();
-    float u = ((float)_rpm - 6 ) / 1.3; // "open loop" controller 
-    _setRPM( u );
+    if (_rpm > 0){
+        _rpm = constrain(_rpm, MIN_RPM, MAX_RPM);
+        rpm = (_rpm - 6 ) / 1.3; // "open loop" controller
+    } else if (rpm < 0){
+        _rpm = constrain(_rpm, -MAX_RPM, -MIN_RPM);
+        rpm = (_rpm + 6 ) / 1.3; // "open loop" controller
+    }
+    _setRPM( rpm );
 }
 /**
  * @brief Wait for the motor to finish its rotation. Will hold the execution of the main loop().
