@@ -1,18 +1,13 @@
 #include "APP/indication.h"
-#include "HAL/HAL.h""
+#include "HAL/HAL.h"
 #include "Arduino.h"
 #include "Wire.h"
 #include "WiFi.h"
 #include "WiFiUdp.h"
 #include "I2Cdev.h"
-#include "MPU6050.h"
 
 WiFiUDP udp;
-// ESP32Servo360 servo;
-// MPU6050 accelgyro;
 
-int16_t ax, ay, az;
-int16_t gx, gy, gz;
 uint16_t angle_speed, counter = 0;
 int udp_data_vectors_length = 700;
 uint8_t a0[700], a1[700];
@@ -21,16 +16,19 @@ uint8_t a0[700], a1[700];
 /* WiFi network name and password */
 const char * ssid = "FRITZ!Box 7530 ZG";
 const char * pwd = "15602667939783165972";
+// const char * ssid = "Redmi";
+// const char * pwd = "5566778899";
 
 /* IP to send data */
 const char * server_ipaddress = "192.168.178.84";
+// const char * server_ipaddress = "192.168.43.1";
 const int udp_port = 8080;
 
 void setup(){
     Serial.begin(115200); // Open the console to see the result of the calibration.
     pinMode(2, OUTPUT);
 
-    init_LServo();
+    LServo_init();
     // pinMode(18, OUTPUT);
     // pinMode(19, INPUT);
     // servo.attach(18,19); // Control pin (white), signal pin (yellow).
@@ -67,9 +65,11 @@ void setup(){
     // Serial.println("Testing device connections...");
     // Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
 
-    set_LServoOffset(get_LServoAngle());
+    LServo_setOffset(LServo_getAngle());
+    usleep(1e6);
     Serial.print("Init LServo Angle is ");
-    Serial.println(get_LServoAngle());
+    Serial.println(LServo_getAngle());
+    usleep(1e6);
 }
 
 //void loop(){
@@ -98,20 +98,26 @@ void loop() {
     // toggle_indication(&OM_INIT);
 
     if (counter < udp_data_vectors_length){
-        rotate_LServo(-counter * 14 / 70 ); // 1 - not works, 3 is already acceptable (with default torque 7)
-        angle_speed = getLServoSpeed();
+        if (counter == 1) {
+            LServo_setAngle( 360 );
+        }
+        if (counter == 150) LServo_setSpeed( -50 );
+        if (counter == 300) {
+            LServo_setAngle( 360 );
+        }
+        angle_speed = LServo_getAngle(); //getLServoSpeed();
         a0[counter] = angle_speed % 0x00ff;
         a1[counter] = angle_speed / 0x00ff;
         // time[counter] = esp_timer_get_time();
-        Serial.print("RPM is ");
-        Serial.print(getLServoSpeed(),10);
-        usleep(1e4);
-        Serial.print("   Counter is ");
-        Serial.println(counter);
+        Serial.print("Angle is ");
+        Serial.println(LServo_getAngle());
+        usleep(5e3);
+        // Serial.print("   Counter is ");
+        // Serial.println(counter);
         counter++;
     }
     else if (counter == udp_data_vectors_length){
-        rotate_LServo(0);
+        LServo_setSpeed(0);
 
         // send buffer to server
         udp.beginPacket(server_ipaddress, udp_port);

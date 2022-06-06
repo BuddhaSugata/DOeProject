@@ -177,7 +177,7 @@ void ESP32Servo360::spin(void)
     if (_rpm > 0){
         _rpm = constrain(_rpm, MIN_RPM, MAX_RPM);
         rpm = (_rpm - 6 ) / 1.3; // "open loop" controller
-    } else if (rpm < 0){
+    } else if (_rpm < 0){
         _rpm = constrain(_rpm, -MAX_RPM, -MIN_RPM);
         rpm = (_rpm + 6 ) / 1.3; // "open loop" controller
     }

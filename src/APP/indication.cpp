@@ -1,6 +1,6 @@
 #include "indication.h"
 #include "unistd.h"
-#include "HAL/leds.h"
+#include "HAL/HAL.h"
 
 /**
  * @brief Mode of signaliztion for onboard LED

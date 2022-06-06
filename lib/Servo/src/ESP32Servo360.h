@@ -28,7 +28,7 @@ class ESP32Servo360
     static const int CHANNEL_MAX_NUM = 10;
 
     static const int MAX_RPM = 140;
-    static const int MIN_RPM = 6; //ease minimal speed = MIN_RPM + MIN_TORQUE
+    static const int MIN_RPM = 10; //ease minimal speed = MIN_RPM + MIN_TORQUE
     static const int MIN_TORQUE = 7;
 
 public:
