@@ -6,12 +6,14 @@
 #include "WiFiUdp.h"
 #include "I2Cdev.h"
 
+#define SAMPLING_TIME 20000 // 20000 usec = 20 ms = 0.02 s, the time of the almost empty loop action itself can be up to 10400, hence, it's the minimal reasonable value
+
 WiFiUDP udp;
 
 uint16_t angle_speed, counter = 0;
 int udp_data_vectors_length = 700;
 uint8_t a0[700], a1[700];
-// int time[1000];
+int t[700] = { 0 };
 
 /* WiFi network name and password */
 const char * ssid = "FRITZ!Box 7530 ZG";
@@ -23,6 +25,7 @@ const char * pwd = "15602667939783165972";
 const char * server_ipaddress = "192.168.178.84";
 // const char * server_ipaddress = "192.168.43.1";
 const int udp_port = 8080;
+int time_stamp = 0;
 
 void setup(){
     Serial.begin(115200); // Open the console to see the result of the calibration.
@@ -98,22 +101,26 @@ void loop() {
     // toggle_indication(&OM_INIT);
 
     if (counter < udp_data_vectors_length){
-        if (counter == 1) {
+        if (counter == 0) {
             LServo_setAngle( 360 );
+            time_stamp = esp_timer_get_time();
         }
         if (counter == 150) LServo_setSpeed( -50 );
         if (counter == 300) {
             LServo_setAngle( 360 );
         }
         angle_speed = LServo_getAngle(); //getLServoSpeed();
-        a0[counter] = angle_speed % 0x00ff;
-        a1[counter] = angle_speed / 0x00ff;
-        // time[counter] = esp_timer_get_time();
+
+        t[counter] = esp_timer_get_time()  - time_stamp;
+        time_stamp = esp_timer_get_time() ;
+        a0[counter] = t[counter] % 0x00ff;
+        a1[counter] = t[counter] / 0x00ff;
+
         Serial.print("Angle is ");
         Serial.println(LServo_getAngle());
-        usleep(5e3);
-        // Serial.print("   Counter is ");
-        // Serial.println(counter);
+        // usleep(1e3);
+        Serial.print("  time_counter is ");
+        Serial.println(t[counter]);
         counter++;
     }
     else if (counter == udp_data_vectors_length){
