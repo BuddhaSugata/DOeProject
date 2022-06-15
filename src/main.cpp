@@ -6,6 +6,8 @@
 #include "WiFiUdp.h"
 #include "I2Cdev.h"
 
+#define DEBUG 1
+
 #define SAMPLING_TIME 20000 // 20000 usec = 20 ms = 0.02 s, the time of the almost empty loop action itself can be up to 10400, hence, it's the minimal reasonable value
 #define CMD_CALIBRATE 101 // Command for udp interface
 #define CMD_TRANSFER 102 // Command for udp interface
@@ -15,10 +17,10 @@
 WiFiUDP udp;
 
 uint16_t angle_speed, counter = 0;
-int udp_data_vectors_length = 700;
-uint8_t a0[700], a1[700];
+int udp_data_vectors_length = 300;
+uint8_t a0[300], a1[300];
 uint8_t udp_command = 0;
-int t[700] = { 0 };
+int t[300] = { 0 };
 
 /* WiFi network name and password */
 const char * ssid = "FRITZ!Box 7530 ZG";
@@ -30,10 +32,11 @@ const int udp_port = 8080;
 
 int time_stamp = 0;
 int delta_time = 0;
+int slow_down = 0;
 
 void setup(){
     Serial.begin(115200); // Open the console to see the result of the calibration.
-    pinMode(2, OUTPUT);
+    // pinMode(2, OUTPUT);
 
     LServo_init();
     // pinMode(18, OUTPUT);
@@ -79,38 +82,22 @@ void setup(){
     usleep(1e6);
 }
 
-//void loop(){
-    // toggle_indication(4e5,8e5);
-
-    // servo.rotate(90);
-    // usleep(1e6);
-    // servo.rotate(-180);
-    // usleep(1e6);
-    // float x = servo.getOrientation();
-//   digitalWrite(2, HIGH);
-//   Serial.println("LED is on");
-//   delay(1000);
-//   digitalWrite(2, LOW);
-//   Serial.println("LED is off");
-//   delay(1000);
-//}
-
-// void setup()
-// {
-//   servo.attach(18, 26); // Control pin (white), signal pin (yellow).
-//   Serial.begin(9600);
-// }
-
 void loop() {
     // toggle_indication(&OM_INIT);
 
-    if (esp_timer_get_time() > time_stamp + SAMPLING_TIME ){
+    if (esp_timer_get_time() > time_stamp + SAMPLING_TIME){
         delta_time = esp_timer_get_time() - time_stamp;
         time_stamp = esp_timer_get_time();
 
-        // //processing incoming packet, must be called before reading the buffer
-        udp.parsePacket();
-        
+        // processing incoming packet, must be called before reading the buffer
+        if(slow_down > 1e6){
+            udp.parsePacket();
+            slow_down = 0;
+        }
+        else{
+            slow_down += delta_time;
+        }
+
         if(udp.read(&udp_command, 1) > 0){
             Serial.print("Server to client: ");
             Serial.println(udp_command);
@@ -118,10 +105,45 @@ void loop() {
 
         if(udp_command == CMD_CALIBRATE){
             Serial.println("Place your code here.");
+            if (counter < udp_data_vectors_length){
+                if (counter == 0) {
+                    LServo_setAngle( 360 );
+                 }
+                if (counter == 150) LServo_setSpeed( -50 );
+                if (counter == 300) {
+                    LServo_setAngle( 360 );
+                }
+                angle_speed = LServo_getAngle();
+
+                t[counter] = delta_time;
+
+                a0[counter] = t[counter] % 0x00ff;
+                a1[counter] = t[counter] / 0x00ff;
+
+                # ifdef DEBUG
+                Serial.print("Angle is ");
+                Serial.println(LServo_getAngle());
+                Serial.print("Time_counter is ");
+                Serial.println(t[counter]);
+                #endif
+
+                counter++;
+            }
+            else{
+                LServo_setSpeed(0);
+                Serial.println("Calibration is done.");
+                udp_command = uint8_t(0);
+            }
         }
 
         if(udp_command == CMD_TRANSFER){
             Serial.println("... or here.");
+            
+            // send buffer to server
+            udp.beginPacket(server_ipaddress, udp_port);
+            udp.write(a0, udp_data_vectors_length);
+            udp.write(a1, udp_data_vectors_length);
+            udp.endPacket();
         }
 
         if(udp_command == CMD_STANDBY){
@@ -132,43 +154,8 @@ void loop() {
             Serial.print("The sampling time is: ");
             Serial.println(delta_time);
         }
-
-
-    //     if (counter < udp_data_vectors_length){
-    //       if (counter == 0) {
-    //           LServo_setAngle( 360 );
-    //          time_stamp = esp_timer_get_time();
-    //       }
-    //        if (counter == 150) LServo_setSpeed( -50 );
-    //       if (counter == 300) {
-    //           LServo_setAngle( 360 );
-    //       }
-    //       angle_speed = LServo_getAngle(); //getLServoSpeed();
-
-    //       t[counter] = delta_time;
-
-    //        a0[counter] = t[counter] % 0x00ff;
-    //        a1[counter] = t[counter] / 0x00ff;
-
-    //       Serial.print("Angle is ");
-    //         Serial.println(LServo_getAngle());
-    //         // usleep(1e3);
-    //         Serial.print("  time_counter is ");
-    //         Serial.println(t[counter]);
-    //         counter++;
-    //   }
-    //    else if (counter == udp_data_vectors_length){
-    //        LServo_setSpeed(0);
-
-    //       // send buffer to server
-    //        udp.beginPacket(server_ipaddress, udp_port);
-    //        udp.write(a0, udp_data_vectors_length);
-    //        udp.write(a1, udp_data_vectors_length);
-    //        udp.endPacket();
-    //        udp.stop();
-    //        // counter++;
-    //     }
     }
+}
 
     // //processing incoming packet, must be called before reading the buffer
     // udp.parsePacket();
@@ -231,4 +218,28 @@ void loop() {
 //   orientation = servo.getOrientation();                        // 0 to 360 degrees.
 //   turns = servo.getTurns();                              // Number of full turns.
 //   Serial.println((String)angle +"° = " + turns + "x, " + orientation + "°"); // Turns won't be saved after a reboot.
-}
+
+
+
+
+//void loop(){
+    // toggle_indication(4e5,8e5);
+
+    // servo.rotate(90);
+    // usleep(1e6);
+    // servo.rotate(-180);
+    // usleep(1e6);
+    // float x = servo.getOrientation();
+//   digitalWrite(2, HIGH);
+//   Serial.println("LED is on");
+//   delay(1000);
+//   digitalWrite(2, LOW);
+//   Serial.println("LED is off");
+//   delay(1000);
+//}
+
+// void setup()
+// {
+//   servo.attach(18, 26); // Control pin (white), signal pin (yellow).
+//   Serial.begin(9600);
+// }
