@@ -1,18 +1,18 @@
 #include "APP/indication.h"
 #include "HAL/HAL.h"
 #include "Arduino.h"
-#include "Wire.h"
 #include "WiFi.h"
 #include "WiFiUdp.h"
-#include "I2Cdev.h"
 
 #define DEBUG 1
 
 #define SAMPLING_TIME 20000 // 20000 usec = 20 ms = 0.02 s, the time of the almost empty loop action itself can be up to 10400, hence, it's the minimal reasonable value
+#define SD_SAMPLING_TIME 1e6 // The time of slowed cycle
 #define CMD_CALIBRATE 101 // Command for udp interface
 #define CMD_TRANSFER 102 // Command for udp interface
 #define CMD_STANDBY 103 // Command for udp interface
 #define CMD_SHOW_TS 104 // Command for udp interface
+#define CMD_SHOW_POSITION 105 // Command for udp interface
 
 WiFiUDP udp;
 
@@ -32,7 +32,8 @@ const int udp_port = 8080;
 
 int time_stamp = 0;
 int delta_time = 0;
-int slow_down = 0;
+int slowdown = 0;
+float alpha = 0;
 
 void setup(){
     Serial.begin(115200); // Open the console to see the result of the calibration.
@@ -64,16 +65,7 @@ void setup(){
      // This initializes udp and transfer buffer
      udp.begin(udp_port);
 
-    
-    // Wire.begin();
-
-    // // initialize device
-    // Serial.println("Initializing I2C devices...");
-    // accelgyro.initialize();
-
-    // // verify connection
-    // Serial.println("Testing device connections...");
-    // Serial.println(accelgyro.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+    AccelGyroBody_init();
 
     LServo_setOffset(LServo_getAngle());
     usleep(1e6);
@@ -89,14 +81,19 @@ void loop() {
         delta_time = esp_timer_get_time() - time_stamp;
         time_stamp = esp_timer_get_time();
 
-        // processing incoming packet, must be called before reading the buffer
-        if(slow_down > 1e6){
-            udp.parsePacket();
-            slow_down = 0;
+        // the slowed piece
+        if(slowdown > SD_SAMPLING_TIME){
+            slowdown = 0;
+
+            // place your code here
+
         }
         else{
-            slow_down += delta_time;
+            slowdown += delta_time;
         }
+
+        // processing incoming packet, must be called before reading the buffer
+        udp.parsePacket();
 
         if(udp.read(&udp_command, 1) > 0){
             Serial.print("Server to client: ");
@@ -154,6 +151,15 @@ void loop() {
             Serial.print("The sampling time is: ");
             Serial.println(delta_time);
         }
+
+        if(udp_command == CMD_SHOW_POSITION){
+            alpha = AccelGyroBody_getAngle() * 180 / 3.14;
+
+            #ifdef DEBUG
+            Serial.print("The declination is: ");
+            Serial.println(alpha);
+            #endif
+        }
     }
 }
 
@@ -168,21 +174,7 @@ void loop() {
     // //Wait for 1 second
     // delay(1000);
 
-    // read raw accel/gyro measurements from device
-    // accelgyro.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
-    // these methods (and a few others) are also available
-    //accelgyro.getAcceleration(&ax, &ay, &az);
-    //accelgyro.getRotation(&gx, &gy, &gz);
-
-        // display tab-separated accel/gyro x/y/z values
-    //     Serial.print("a/g:\t");
-    //     Serial.print(ax); Serial.print("\t");
-    //     Serial.print(ay); Serial.print("\t");
-    //     Serial.print(az); Serial.print("\t");
-    //     Serial.print(gx); Serial.print("\t");
-    //     Serial.print(gy); Serial.print("\t");
-    //     Serial.println(gz);
 
 
     // delay(5000);

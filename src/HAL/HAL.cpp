@@ -1,7 +1,11 @@
 #include "HAL.h"
 #include "FW/gpio.h"
 #include "ESP32Servo360.h"
+#include "Wire.h"
+#include "I2Cdev.h"
 #include "MPU6050.h"
+
+#define DEBUG 1
 
 #define ONBOARD_LED 2
 #define LSERVO_FEEDBACK_PIN 18
@@ -14,11 +18,15 @@
 #define MAX_PWM 1034
 #define DEFAULT_MAX_SPEED 140
 
+#define MPU_IPIN 21
+#define MPU_OPIN 22
+
 ESP32Servo360 LServo, RServo, UServo;
-MPU6050 AccelgyroNear, AccellgyroFar;
+MPU6050 AccelgyroBody, AccellgyroLever;
 
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
+int16_t* angle;
 
 void set_onboard_led(int val)
 {
@@ -105,6 +113,53 @@ void UServo_setOffset(int offsetAngle){
     LServo.setOffset(offsetAngle);
 }
 
+void AccelGyroBody_init(void){
+    Wire.begin();
 
+    // initialize device
+    Serial.println("Initializing I2C devices...");
+    AccelgyroBody.initialize();
 
+    #ifdef DEBUG
+    // verify connection
+    Serial.println("Testing device connections...");
+    Serial.println(AccelgyroBody.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+    #endif
+}
 
+/**
+ * @brief Angle between vertical Earth gravitation axis and a device
+ * 
+ * @return angle in rads 
+ */
+
+float AccelGyroBody_getAngle(void){
+    float angle = 0;
+
+    // read raw accel/gyro measurements from device
+    // AccelgyroBody.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+
+    // these methods (and a few others) are also available
+    AccelgyroBody.getAcceleration(&ax, &ay, &az);
+    // AccelgyroBody.getRotation(&gx, &gy, &gz);
+
+    angle = atan(sqrt(static_cast<float>(ax*ax + ay*ay) / static_cast<float>(az*az)));
+
+    #ifdef DEBUG
+    // display tab-separated accel/gyro x/y/z values
+    Serial.print("The BodyMPU a/g:\t");
+    Serial.print(ax);
+    Serial.print("\t");
+    Serial.print(ay);
+    Serial.print("\t");
+    Serial.print(az);
+    Serial.print("\t");
+    Serial.print(gx);
+    Serial.print("\t");
+    Serial.print(gy);
+    Serial.print("\t");
+    Serial.println(gz);
+    #endif
+    
+    return angle;
+}
