@@ -4,6 +4,8 @@
 #include "Wire.h"
 #include "I2Cdev.h"
 #include "MPU6050.h"
+#include "cmath"
+#include "numeric"
 
 #define DEBUG 1
 
@@ -20,13 +22,17 @@
 
 #define MPU_IPIN 21
 #define MPU_OPIN 22
+#define MPU_ANGLE_FIR_LENGTH 5 
+
+using namespace std;
 
 ESP32Servo360 LServo, RServo, UServo;
 MPU6050 AccelgyroBody, AccellgyroLever;
 
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
-int16_t* angle;
+float angle[MPU_ANGLE_FIR_LENGTH];
+int filter_array_dobby = 0;
 
 void set_onboard_led(int val)
 {
@@ -128,24 +134,19 @@ void AccelGyroBody_init(void){
 }
 
 /**
- * @brief Angle between vertical Earth gravitation axis and a device
+ * @brief Angle between X and Z axes of IMU and a device
  * 
  * @return angle in rads 
  */
 
-float AccelGyroBody_getAngle(void){
-    float angle = 0;
-
+float AccelGyroBody_getAngleXZ(void){
     // read raw accel/gyro measurements from device
-    // AccelgyroBody.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
-
-    // these methods (and a few others) are also available
     AccelgyroBody.getAcceleration(&ax, &ay, &az);
-    // AccelgyroBody.getRotation(&gx, &gy, &gz);
 
-    angle = atan(sqrt(static_cast<float>(ax*ax + ay*ay) / static_cast<float>(az*az)));
+    angle[filter_array_dobby] = atan(sqrt(static_cast<float>(ax*ax) / static_cast<float>(az*az)));
 
     #ifdef DEBUG
+    AccelgyroBody.getRotation(&gx, &gy, &gz);
     // display tab-separated accel/gyro x/y/z values
     Serial.print("The BodyMPU a/g:\t");
     Serial.print(ax);
@@ -161,5 +162,21 @@ float AccelGyroBody_getAngle(void){
     Serial.println(gz);
     #endif
     
-    return angle;
+    (filter_array_dobby < MPU_ANGLE_FIR_LENGTH) ? filter_array_dobby++ : filter_array_dobby = 0;
+    return accumulate(angle,angle+MPU_ANGLE_FIR_LENGTH-1,0.0)/MPU_ANGLE_FIR_LENGTH;
+}
+/**
+ * @brief Angle between Y and Z axes of IMU and a device
+ * 
+ * @return angle in rads
+ */
+float AccelGyroBody_getAngleYZ(void){
+    // read raw accel/gyro measurements from device
+    // AccelgyroBody.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+
+    // these methods (and a few others) are also available
+    AccelgyroBody.getAcceleration(&ax, &ay, &az);
+    // AccelgyroBody.getRotation(&gx, &gy, &gz);
+
+    return atan2(sqrt(static_cast<float>(az)), sqrt(static_cast<float>(ay)));
 }

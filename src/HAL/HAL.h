@@ -41,7 +41,8 @@ void UServo_setOffset(int offsetAngle);
 void AccelGyroBody_init(void);
 void AccelGyroLever_init(void);
 
-float AccelGyroBody_getAngle(void);
+float AccelGyroBody_getAngleXZ(void);
+float AccelGyroBody_getAngleYZ(void);
 int AccelGyroLever_getAngle(void);
 
 #ifdef __cplusplus

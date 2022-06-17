@@ -81,17 +81,6 @@ void loop() {
         delta_time = esp_timer_get_time() - time_stamp;
         time_stamp = esp_timer_get_time();
 
-        // the slowed piece
-        if(slowdown > SD_SAMPLING_TIME){
-            slowdown = 0;
-
-            // place your code here
-
-        }
-        else{
-            slowdown += delta_time;
-        }
-
         // processing incoming packet, must be called before reading the buffer
         udp.parsePacket();
 
@@ -132,7 +121,17 @@ void loop() {
                 udp_command = uint8_t(0);
             }
         }
+        // the slowed piece
+        if (slowdown > SD_SAMPLING_TIME)
+        {
+            slowdown = 0;
 
+            // place your code here
+        }
+        else
+        {
+            slowdown += delta_time;
+        }
         if(udp_command == CMD_TRANSFER){
             Serial.println("... or here.");
             
@@ -152,16 +151,19 @@ void loop() {
             Serial.println(delta_time);
         }
 
-        if(udp_command == CMD_SHOW_POSITION){
-            alpha = AccelGyroBody_getAngle() * 180 / 3.14;
+        if (udp_command == CMD_SHOW_POSITION)
+        {
+            alpha = AccelGyroBody_getAngleXZ() * 180 / 3.14;
 
-            #ifdef DEBUG
-            Serial.print("The declination is: ");
-            Serial.println(alpha);
-            #endif
+#ifdef DEBUG
+        Serial.print("The declination is: ");
+        Serial.println(alpha);
+#endif
+
         }
     }
 }
+
 
     // //processing incoming packet, must be called before reading the buffer
     // udp.parsePacket();
