@@ -6,7 +6,6 @@
 
 #define DEBUG 1
 
-#define SAMPLING_TIME 20000 // 20000 usec = 20 ms = 0.02 s, the time of the almost empty loop action itself can be up to 10400, hence, it's the minimal reasonable value
 #define SD_SAMPLING_TIME 1e6 // The time of slowed cycle
 #define CMD_CALIBRATE 101 // Command for udp interface
 #define CMD_TRANSFER 102 // Command for udp interface
@@ -153,11 +152,14 @@ void loop() {
 
         if (udp_command == CMD_SHOW_POSITION)
         {
-            alpha = AccelGyroBody_getAngleXZ() * 180 / 3.14;
+            alpha = AccelGyroBody_getAngleXZ() * 180 / PI;
+            float alpha2 = AccelGyroBody_getAngleXZtild()* 180 / PI;
 
 #ifdef DEBUG
-        Serial.print("The declination is: ");
+        Serial.print("The declination1 is: ");
         Serial.println(alpha);
+        // Serial.print("The declination2 is: ");
+        // Serial.println(alpha2);
 #endif
 
         }

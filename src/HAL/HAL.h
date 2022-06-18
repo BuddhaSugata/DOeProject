@@ -4,6 +4,8 @@
 extern "C" {
 
 #endif
+
+#define SAMPLING_TIME 20000 // 20000 usec = 20 ms = 0.02 s, the time of the almost empty loop action itself can be up to 10400, hence, it's the minimal reasonable value
 /**
  * @brief Set the onboard led object
  * 
@@ -42,8 +44,10 @@ void AccelGyroBody_init(void);
 void AccelGyroLever_init(void);
 
 float AccelGyroBody_getAngleXZ(void);
+float AccelGyroBody_getAngleXZtild(void);
 float AccelGyroBody_getAngleYZ(void);
 int AccelGyroLever_getAngle(void);
+void dmpDataReady(void);
 
 #ifdef __cplusplus
 
