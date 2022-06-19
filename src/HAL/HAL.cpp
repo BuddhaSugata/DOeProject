@@ -7,12 +7,17 @@
 #include "I2Cdev.h"
 #include "cmath"
 #include "numeric"
+#include "WiFi.h"
+#include "WiFiUdp.h"
 
 #define DEBUG 1
+// #define PROTOTYPE
+#define TEST_PLATE
 
-#define ONBOARD_LED 2
-#define LSERVO_FEEDBACK_PIN 18
-#define LSERVO_CONTROL_PIN 19
+#ifdef TEST_PLATE
+
+#define LSERVO_FEEDBACK_PIN 19
+#define LSERVO_CONTROL_PIN 18
 #define RSERVO_FEEDBACK_PIN 20
 #define RSERVO_CONTROL_PIN 21
 #define USERVO_FEEDBACK_PIN 22
@@ -21,6 +26,27 @@
 #define MAX_PWM 1034
 #define DEFAULT_MAX_SPEED 140
 
+
+#endif
+
+#ifdef PROTOTYPE
+
+#define LSERVO_FEEDBACK_PIN 12
+#define LSERVO_CONTROL_PIN 13
+#define RSERVO_FEEDBACK_PIN 27
+#define RSERVO_CONTROL_PIN 14
+#define USERVO_FEEDBACK_PIN 25
+#define USERVO_CONTROL_PIN 26
+#define MIN_PWM 34
+#define MAX_PWM 1034
+#define DEFAULT_MAX_SPEED 140
+#define LED2_PIN 4  //red
+#define LED3_PIN 2  //green
+#define LED4_PIN 15 //yellow
+
+#endif
+
+#define ONBOARD_LED 2
 #define IMU_IPIN 21
 #define IMU_OPIN 22
 #define IMU_ANGLE_FIR_LENGTH 10 //from 2 to "infty"
@@ -31,6 +57,7 @@ using namespace std;
 
 ESP32Servo360 LServo, RServo, UServo;
 MPU6050 AccelgyroBody, AccellgyroLever;
+WiFiUDP udp;
 
 int16_t ax, ay, az;
 int16_t gx, gy, gz;
@@ -40,39 +67,32 @@ Quaternion q;
 VectorFloat gravity;
 float ypr[3] = { 0 };
 
-void set_onboard_led(int val)
-{
-    set_gpio(ONBOARD_LED, val);  
-}
-
-void get_onboard_led(void)
-{
-    get_gpio(ONBOARD_LED);
-}
-
 void LServo_init(void){
-    LServo.attach(LSERVO_FEEDBACK_PIN,LSERVO_CONTROL_PIN);
+    LServo.attach(LSERVO_CONTROL_PIN,LSERVO_FEEDBACK_PIN);
     LServo.adjustSignal(MIN_PWM,MAX_PWM);
     LServo.setSpeed(DEFAULT_MAX_SPEED);
-    // LServo.adjustSignal(2, 1000); // Setting manually the wrong PWMs, defaults are 32 & 1067, min then max.
-    // LServo.setMinimalForce(8); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
-    // LServo.calibrate(0); // Setting accurate PWMs by comparing while spinning slowly.
+    LServo.setMinimalForce(8); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
+    LServo.rotateTo(0); // Setting accurate PWMs by comparing while spinning slowly.
+    #ifdef DEBUG
+    Serial.print("The angle is: ");
+    Serial.println(LServo_getAngle());
+    #endif
 }
 void RServo_init(void){
-    LServo.attach(RSERVO_FEEDBACK_PIN,RSERVO_CONTROL_PIN);
-    LServo.adjustSignal(MIN_PWM,MAX_PWM);
-    LServo.setSpeed(DEFAULT_MAX_SPEED);
-    // LServo.adjustSignal(2, 1000); // Setting manually the wrong PWMs, defaults are 32 & 1067, min then max.
-    // LServo.setMinimalForce(8); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
-    // LServo.calibrate(0); // Setting accurate PWMs by comparing while spinning slowly.
+    RServo.attach(RSERVO_CONTROL_PIN,RSERVO_FEEDBACK_PIN);
+    RServo.adjustSignal(MIN_PWM,MAX_PWM);
+    RServo.setSpeed(DEFAULT_MAX_SPEED);
+    RServo.setMinimalForce(8); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
+    RServo.rotateTo(0); // Setting accurate PWMs by comparing while spinning slowly.
 }
 void UServo_init(void){
-    LServo.attach(USERVO_FEEDBACK_PIN,USERVO_CONTROL_PIN);
-    LServo.adjustSignal(MIN_PWM,MAX_PWM);
-    LServo.setSpeed(DEFAULT_MAX_SPEED);
-    // LServo.adjustSignal(2, 1000); // Setting manually the wrong PWMs, defaults are 32 & 1067, min then max.
-    // LServo.setMinimalForce(8); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
-    // LServo.calibrate(0); // Setting accurate PWMs by comparing while spinning slowly.
+    UServo.attach(USERVO_CONTROL_PIN,USERVO_FEEDBACK_PIN);
+    UServo.adjustSignal(MIN_PWM,MAX_PWM);
+    UServo.setSpeed(DEFAULT_MAX_SPEED);
+    UServo.setMinimalForce(8); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
+    UServo.spin(-20);
+    usleep(2000);
+    UServo.setOffset(UServo_getAngle()); // Setting offset to the actual position
 }
 
 int LServo_getAngle(void){
@@ -119,10 +139,10 @@ void LServo_setOffset(int offsetAngle){
     LServo.setOffset(offsetAngle);
 }
 void RServo_setOffset(int offsetAngle){
-    LServo.setOffset(offsetAngle);
+    RServo.setOffset(offsetAngle);
 }
 void UServo_setOffset(int offsetAngle){
-    LServo.setOffset(offsetAngle);
+    UServo.setOffset(offsetAngle);
 }
 
 void AccelGyroBody_init(){
@@ -185,7 +205,7 @@ void dmpDataReady() {
  * @return angle in rads 
  */
 
-float AccelGyroBody_getAngleXZ(void){
+float AccelGyroBody_getAngleXG(void){
     // read raw accel/gyro measurements from device
     AccelgyroBody.getAcceleration(&ax, &ay, &az);
     AccelgyroBody.getRotation(&gx, &gy, &gz);
@@ -259,4 +279,73 @@ float AccelGyroBody_getAngleXZtild(void){
     #endif
     
     return ypr[1]; // atan2(static_cast<float>(quat->x), static_cast<float>(quat->z));
+}
+
+void UDP_attach(const char *ssid, const char *pwd, int udp_port){
+    
+    // Connnect to WiFi
+    WiFi.begin(ssid,pwd);
+    Serial.println("");
+
+    // Waiting for the connection
+    while(WiFi.status() != WL_CONNECTED){
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.println("");
+    Serial.print("Connected to ");
+    Serial.println(ssid);
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
+    // This initializes udp and transfer buffer
+    udp.begin(udp_port);
+}
+
+void UDP_parse(void){
+    // processing incoming packet, must be called before reading the buffer
+    udp.parsePacket();
+}
+
+void UDP_toML(int* par, int len, int shift, const char *server_ipaddress, int udp_port){
+    uint8_t a0[len], a1[len] = { 0 }; 
+
+    for (int i = 0; i<len; i++){
+        int j = i + shift;
+        if ( j < len)
+        {
+            a0[i] = par[j] % 0x00ff;
+            a1[i] = par[j] / 0x00ff;
+        }
+        else {
+            a0[i] = par[j - len] % 0x00ff;
+            a1[i] = par[j - len] / 0x00ff;
+        }
+    }
+
+    // send buffer to server
+    udp.beginPacket(server_ipaddress, udp_port);
+    udp.write(a0, len);
+    udp.write(a1, len);
+    udp.endPacket();
+}
+int UDP_read(void *ptr){
+    return (int)udp.read((char*)ptr, 1);
+}
+
+void set_onboard_led(int val)
+{
+    set_gpio(ONBOARD_LED, val);  
+}
+
+void get_onboard_led(void)
+{
+    get_gpio(ONBOARD_LED);
+}
+
+long getTime(void){
+    return (long)esp_timer_get_time();
+}
+
+void sleep_us(int t){
+    usleep(t);
 }

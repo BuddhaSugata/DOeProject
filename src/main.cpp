@@ -1,25 +1,20 @@
 #include "APP/indication.h"
 #include "HAL/HAL.h"
 #include "Arduino.h"
-#include "WiFi.h"
-#include "WiFiUdp.h"
+#include "cmath"
+#include "numeric"
 
 #define DEBUG 1
 
-#define SD_SAMPLING_TIME 1e6 // The time of slowed cycle
-#define CMD_CALIBRATE 101 // Command for udp interface
-#define CMD_TRANSFER 102 // Command for udp interface
-#define CMD_STANDBY 103 // Command for udp interface
-#define CMD_SHOW_TS 104 // Command for udp interface
-#define CMD_SHOW_POSITION 105 // Command for udp interface
-
-WiFiUDP udp;
-
-uint16_t angle_speed, counter = 0;
-int udp_data_vectors_length = 300;
-uint8_t a0[300], a1[300];
-uint8_t udp_command = 0;
-int t[300] = { 0 };
+#define SD_SAMPLING_TIME 1000000 // The time of slowed cycle
+#define CMD_TRANSFER_TIME 101 // Command for udp interface
+#define CMD_TRANSFER_LANGLE 102 // Command for udp interface
+#define CMD_TRANSFER_RANGLE 103 // Command for udp interface
+#define CMD_TRANSFER_UANGLE 104 // Command for udp interface
+#define CMD_TRANSFER_BODYANGLE 105
+#define CMD_START_LOG 120
+#define CMD_STOP_LOG 121
+#define CMD_ROTATE 115 // Command for udp interface
 
 /* WiFi network name and password */
 const char * ssid = "FRITZ!Box 7530 ZG";
@@ -28,6 +23,19 @@ const char * pwd = "15602667939783165972";
 /* IP to send data */
 const char * server_ipaddress = "192.168.178.84";
 const int udp_port = 8080;
+
+uint16_t angle_speed, counter = 0;
+const int udp_data_vectors_length = 300; // 700 is max
+uint8_t a0[udp_data_vectors_length], a1[udp_data_vectors_length];
+uint8_t udp_command = 0;
+
+int t[udp_data_vectors_length] = { 0 };
+int LAngle[udp_data_vectors_length] = { 0 };
+int RAngle[udp_data_vectors_length] = { 0 };
+int UAngle[udp_data_vectors_length] = { 0 };
+int BodyAngle[udp_data_vectors_length] = { 0 };
+int* log_pointers[5] = {t, LAngle, RAngle, UAngle, BodyAngle};
+int log_cmd = 0;
 
 int time_stamp = 0;
 int delta_time = 0;
@@ -38,131 +46,68 @@ void setup(){
     Serial.begin(115200); // Open the console to see the result of the calibration.
     // pinMode(2, OUTPUT);
 
-    LServo_init();
-    // pinMode(18, OUTPUT);
-    // pinMode(19, INPUT);
-    // servo.attach(18,19); // Control pin (white), signal pin (yellow).
-    // servo.adjustSignal(2, 1000); // Setting manually the wrong PWMs, defaults are 32 & 1067, min then max.
-    // servo.setMinimalForce(8); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
-    // servo.calibrate(0); // Setting accurate PWMs by comparing while spinning slowly.
-    // servo.setSpeed(140); // Set turns per minute (RPM), 140 max.
-
-    // Connnect to WiFi
-    WiFi.begin(ssid,pwd);
-    Serial.println("");
-
-    // Waiting for the connection
-    while(WiFi.status() != WL_CONNECTED){
-        delay(500);
-        Serial.print(".");
-    }
-    Serial.println("");
-     Serial.print("Connected to ");
-     Serial.println(ssid);
-     Serial.print("IP address: ");
-     Serial.println(WiFi.localIP());
-     // This initializes udp and transfer buffer
-     udp.begin(udp_port);
+#ifdef PROTOTYPE
+    
+#endif
+    UDP_attach(ssid, pwd, udp_port);
 
     AccelGyroBody_init();
 
-    LServo_setOffset(LServo_getAngle());
-    usleep(1e6);
-    Serial.print("Init LServo Angle is ");
-    Serial.println(LServo_getAngle());
-    usleep(1e6);
+    LServo_init();
+    RServo_init();
+    UServo_init();
+
+    sleep_us(1e6);
 }
 
 void loop() {
     // toggle_indication(&OM_INIT);
 
-    if (esp_timer_get_time() > time_stamp + SAMPLING_TIME){
-        delta_time = esp_timer_get_time() - time_stamp;
-        time_stamp = esp_timer_get_time();
+    if (getTime() > time_stamp + SAMPLING_TIME){
+        delta_time = getTime() - time_stamp;
+        time_stamp = getTime();
 
-        // processing incoming packet, must be called before reading the buffer
-        udp.parsePacket();
+        UDP_parse();
 
-        if(udp.read(&udp_command, 1) > 0){
+        // Logging
+        if (log_cmd){
+            t[counter] = delta_time;
+            LAngle[counter] = LServo_getAngle();
+            RAngle[counter] = RServo_getAngle();
+            UAngle[counter] = UServo_getAngle();
+            BodyAngle[counter] = static_cast<int>(AccelGyroBody_getAngleXG());
+        }
+
+        if(UDP_read(&udp_command) > 0){
             Serial.print("Server to client: ");
             Serial.println(udp_command);
         }
 
-        if(udp_command == CMD_CALIBRATE){
-            Serial.println("Place your code here.");
-            if (counter < udp_data_vectors_length){
-                if (counter == 0) {
-                    LServo_setAngle( 360 );
-                 }
-                if (counter == 150) LServo_setSpeed( -50 );
-                if (counter == 300) {
-                    LServo_setAngle( 360 );
-                }
-                angle_speed = LServo_getAngle();
+        // sending data on request
+        if ((udp_command >= 105) & (udp_command <= 105))
+        UDP_toML(*log_pointers + (udp_command - 101), udp_data_vectors_length, counter, server_ipaddress, udp_port);
 
-                t[counter] = delta_time;
-
-                a0[counter] = t[counter] % 0x00ff;
-                a1[counter] = t[counter] / 0x00ff;
-
-                # ifdef DEBUG
-                Serial.print("Angle is ");
-                Serial.println(LServo_getAngle());
-                Serial.print("Time_counter is ");
-                Serial.println(t[counter]);
-                #endif
-
-                counter++;
-            }
-            else{
-                LServo_setSpeed(0);
-                Serial.println("Calibration is done.");
-                udp_command = uint8_t(0);
-            }
+        if (udp_command == CMD_ROTATE){
+            RServo_setSpeed(20);
+            LServo_setSpeed(20);
+            UServo_setSpeed(20);
         }
+
+        if (udp_command == 211){
+            RServo_setAngle(10);
+            LServo_setAngle(10);
+        }
+
         // the slowed piece
         if (slowdown > SD_SAMPLING_TIME)
         {
             slowdown = 0;
-
-            // place your code here
         }
         else
         {
             slowdown += delta_time;
         }
-        if(udp_command == CMD_TRANSFER){
-            Serial.println("... or here.");
-            
-            // send buffer to server
-            udp.beginPacket(server_ipaddress, udp_port);
-            udp.write(a0, udp_data_vectors_length);
-            udp.write(a1, udp_data_vectors_length);
-            udp.endPacket();
-        }
-
-        if(udp_command == CMD_STANDBY){
-            Serial.println("I think you've got the idea.");
-        }
-
-        if(udp_command == CMD_SHOW_TS){
-            Serial.print("The sampling time is: ");
-            Serial.println(delta_time);
-        }
-
-        if (udp_command == CMD_SHOW_POSITION)
-        {
-            alpha = AccelGyroBody_getAngleXZ() * 180 / PI;
-            float alpha2 = AccelGyroBody_getAngleXZtild()* 180 / PI;
-
-#ifdef DEBUG
-        Serial.print("The declination1 is: ");
-        Serial.println(alpha);
-        // Serial.print("The declination2 is: ");
-        // Serial.println(alpha2);
-#endif
-
-        }
+        counter < udp_data_vectors_length - 1 ? counter++ : counter = 0;
     }
 }
 

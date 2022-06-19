@@ -43,11 +43,35 @@ void UServo_setOffset(int offsetAngle);
 void AccelGyroBody_init(void);
 void AccelGyroLever_init(void);
 
-float AccelGyroBody_getAngleXZ(void);
+float AccelGyroBody_getAngleXG(void);
 float AccelGyroBody_getAngleXZtild(void);
 float AccelGyroBody_getAngleYZ(void);
 int AccelGyroLever_getAngle(void);
 void dmpDataReady(void);
+
+void UDP_attach(const char *ssid, const char *pwd, int udp_port);
+void UDP_parse(void);
+void UDP_toML(int* par, int len, int shift, const char *server_ipaddress, int udp_port);
+int UDP_read(void *ptr);
+
+long getTime(void);
+void sleep_us(int t);
+
+// class Servo{
+//     //consts
+
+// public:
+//     Servo(float *positive_rotation_sign);
+//     void init(void);
+//     void calibrate(void);
+//     int getAngle(void);
+//     void setAngle(int* angle);
+//     void setSpeed(int* speed);
+//     void setOffset(int *offsetAngle);
+
+// private:
+//     float _positive_rotation_sign;
+// };
 
 #ifdef __cplusplus
 
