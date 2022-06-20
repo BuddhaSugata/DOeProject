@@ -10,7 +10,7 @@
 #include "WiFi.h"
 #include "WiFiUdp.h"
 
-#define DEBUG 1
+#define DEBUG
 // #define PROTOTYPE
 #define TEST_PLATE
 
@@ -71,8 +71,9 @@ void LServo_init(void){
     LServo.attach(LSERVO_CONTROL_PIN,LSERVO_FEEDBACK_PIN);
     LServo.adjustSignal(MIN_PWM,MAX_PWM);
     LServo.setSpeed(DEFAULT_MAX_SPEED);
+    LServo.clearAngle();
     LServo.setMinimalForce(8); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
-    LServo.rotateTo(0); // Setting accurate PWMs by comparing while spinning slowly.
+
     #ifdef DEBUG
     Serial.print("The angle is: ");
     Serial.println(LServo_getAngle());
@@ -145,6 +146,13 @@ void UServo_setOffset(int offsetAngle){
     UServo.setOffset(offsetAngle);
 }
 
+uint8_t mpuIntStatus = 0;
+uint8_t devStatus = 0;
+uint16_t packetSize = 0;
+uint16_t fifoCount = 0;
+uint8_t *fifoBuffer;
+bool dmpReady = 0;
+
 void AccelGyroBody_init(){
     Wire.begin();
 
@@ -152,6 +160,7 @@ void AccelGyroBody_init(){
     Serial.println("Initializing I2C devices...");
     AccelgyroBody.initialize();
     pinMode(IMU_IPIN, INPUT);
+    attachInterruptArg(IMU_IPIN,&AccelGyroBody_readFifoBuffer,&AccelgyroBody, CHANGE);
 
     #ifdef DEBUG
     // verify connection
@@ -161,7 +170,7 @@ void AccelGyroBody_init(){
 
     // load and configure the DMP
     Serial.println(F("Initializing DMP..."));
-    uint8_t devStatus = AccelgyroBody.dmpInitialize();
+    devStatus = AccelgyroBody.dmpInitialize();
 
     // make sure it worked (returns 0 if so)
     if (devStatus == 0)
@@ -177,10 +186,10 @@ void AccelGyroBody_init(){
 
         // set our DMP Ready flag so the main loop() function knows it's okay to use it
         Serial.println(F("DMP ready! Waiting for first interrupt..."));
-        bool dmpReady = true;
+        dmpReady = true;
 
         // get expected DMP packet size for later comparison
-        uint16_t packetSize = AccelgyroBody.dmpGetFIFOPacketSize(); // перенести определения в глобал !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        packetSize = AccelgyroBody.dmpGetFIFOPacketSize();
     }
     else
     {
@@ -200,7 +209,7 @@ void dmpDataReady() {
 }
 
 /**
- * @brief Angle between X and Z axes of IMU and a device
+ * @brief Angle between X and Gravity axes of IMU and a device
  * 
  * @return angle in rads 
  */
@@ -212,7 +221,7 @@ float AccelGyroBody_getAngleXG(void){
 
     _angle[_filter_array_dobby] = atan2(static_cast<float>(ax), static_cast<float>(az));
 
-    #ifdef DEBUG
+    #ifdef DEBUG2
     // display tab-separated accel/gyro x/y/z values
     Serial.print("The BodyMPU a/g:\t");
     Serial.print(ax);
@@ -243,18 +252,13 @@ float AccelGyroBody_getAngleXG(void){
  * 
  * @return float 
  */
-float AccelGyroBody_getAngleXZtild(void){
-    // read raw accel/gyro measurements from device
-    AccelgyroBody.getAcceleration(&ax, &ay, &az);
-    AccelgyroBody.getRotation(&gx, &gy, &gz);
+float AccelGyroBody_getAngleXGtild(void){
 
-    _angle[_filter_array_dobby] = atan2(static_cast<float>(ax), static_cast<float>(az));
-
-    // AccelgyroBody.dmpGetQuaternion(&q,0);
+    // AccelgyroBody.dmpGetQuaternion(&q, fifoBuffer);
     // AccelgyroBody.dmpGetGravity(&gravity, &q);
     // AccelgyroBody.dmpGetYawPitchRoll(ypr, &q, &gravity);
 
-    #ifdef DEBUG
+    #ifdef DEBUG2
     // display tab-separated accel/gyro x/y/z values
     Serial.print("The BodyMPU a/g:\t");
     Serial.print(ax);
@@ -281,6 +285,38 @@ float AccelGyroBody_getAngleXZtild(void){
     return ypr[1]; // atan2(static_cast<float>(quat->x), static_cast<float>(quat->z));
 }
 
+void AccelGyroBody_readFifoBuffer(void *arg) {
+    // Check for DMP data ready interrupt (this should happen frequently)
+    if (mpuIntStatus & 0x02)
+    {
+        // wait for correct available data length, should be a VERY short wait
+        while (fifoCount < packetSize)
+            fifoCount = AccelgyroBody.getFIFOCount();
+
+        // read a packet from FIFO
+        AccelgyroBody.getFIFOBytes(fifoBuffer, packetSize);
+
+        // track FIFO count here in case there is > 1 packet available
+        // (this lets us immediately read more without waiting for an interrupt)
+        fifoCount -= packetSize;
+
+        // get quaternion values in easy matrix form: w x y z
+        AccelgyroBody.dmpGetQuaternion(&q, fifoBuffer);
+    }
+//   // Clear the buffer so as we can get fresh values
+//   // The sensor is running a lot faster than our sample period
+//   AccelgyroBody.resetFIFO();
+  
+//   // get current FIFO count
+//   fifoCount = AccelgyroBody.getFIFOCount();
+  
+//   // wait for correct available data length, should be a VERY short wait
+//   while (fifoCount < packetSize) fifoCount = AccelgyroBody.getFIFOCount();
+
+//   // read a packet from FIFO
+//   AccelgyroBody.getFIFOBytes(fifoBuffer, packetSize);
+}
+
 void UDP_attach(const char *ssid, const char *pwd, int udp_port){
     
     // Connnect to WiFi
@@ -300,12 +336,10 @@ void UDP_attach(const char *ssid, const char *pwd, int udp_port){
     // This initializes udp and transfer buffer
     udp.begin(udp_port);
 }
-
 void UDP_parse(void){
     // processing incoming packet, must be called before reading the buffer
     udp.parsePacket();
 }
-
 void UDP_toML(int* par, int len, int shift, const char *server_ipaddress, int udp_port){
     uint8_t a0[len], a1[len] = { 0 }; 
 
@@ -321,6 +355,8 @@ void UDP_toML(int* par, int len, int shift, const char *server_ipaddress, int ud
             a1[i] = par[j - len] / 0x00ff;
         }
     }
+    #ifdef DEBUG
+    #endif
 
     // send buffer to server
     udp.beginPacket(server_ipaddress, udp_port);

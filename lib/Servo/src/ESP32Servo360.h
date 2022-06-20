@@ -65,6 +65,7 @@ public:
     float getSpeed();
     float getOrientation();
     int getTurns();
+    void clearAngle();
 
 private:
     void IRAM_ATTR _rising();

@@ -44,9 +44,10 @@ void AccelGyroBody_init(void);
 void AccelGyroLever_init(void);
 
 float AccelGyroBody_getAngleXG(void);
-float AccelGyroBody_getAngleXZtild(void);
+float AccelGyroBody_getAngleXGtild(void);
 float AccelGyroBody_getAngleYZ(void);
 int AccelGyroLever_getAngle(void);
+void AccelGyroBody_readFifoBuffer(void *arg);
 void dmpDataReady(void);
 
 void UDP_attach(const char *ssid, const char *pwd, int udp_port);

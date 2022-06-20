@@ -521,14 +521,16 @@ void ESP32Servo360::_isr(void *arg)
 {
 
     ESP32Servo360 *s = (ESP32Servo360 *)arg;
-
-    if (digitalRead(s->_feedbackPin))
-    { // FALLING
-        s->_prevTime = esp_timer_get_time();
-    }
-    else
+    if (!digitalRead(s->_ctrlPin))                          // if it's not the the servo pulse
     {
-        s->_pwmValue = esp_timer_get_time() - s->_prevTime;
+        if (digitalRead(s->_feedbackPin))
+        { // FALLING
+            s->_prevTime = esp_timer_get_time();
+        }
+        else
+        {
+            s->_pwmValue = esp_timer_get_time() - s->_prevTime;
+        }
     }
 }
 
@@ -629,4 +631,8 @@ int8_t ESP32Servo360::_sgn(int val)
     if (val == 0)
         return 0;
     return 1;
+}
+
+void ESP32Servo360::clearAngle(void){
+    _angle = 0;
 }

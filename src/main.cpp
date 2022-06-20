@@ -34,8 +34,9 @@ int LAngle[udp_data_vectors_length] = { 0 };
 int RAngle[udp_data_vectors_length] = { 0 };
 int UAngle[udp_data_vectors_length] = { 0 };
 int BodyAngle[udp_data_vectors_length] = { 0 };
-int* log_pointers[5] = {t, LAngle, RAngle, UAngle, BodyAngle};
-int log_cmd = 0;
+int testing_sequence[udp_data_vectors_length] = { 0 };
+int* log_pointers[6] = {t, LAngle, RAngle, UAngle, BodyAngle, testing_sequence};
+int log_cmd = 1;
 
 int time_stamp = 0;
 int delta_time = 0;
@@ -54,8 +55,12 @@ void setup(){
     AccelGyroBody_init();
 
     LServo_init();
-    RServo_init();
-    UServo_init();
+    // RServo_init();
+    // UServo_init();
+
+    // generating of testing sequence (for udp correctness checking)
+    for (int i = 0; i<udp_data_vectors_length; i++)
+       *(testing_sequence+i) = i;
 
     sleep_us(1e6);
 }
@@ -63,7 +68,7 @@ void setup(){
 void loop() {
     // toggle_indication(&OM_INIT);
 
-    if (getTime() > time_stamp + SAMPLING_TIME){
+    // if (getTime() > time_stamp + SAMPLING_TIME){
         delta_time = getTime() - time_stamp;
         time_stamp = getTime();
 
@@ -73,7 +78,7 @@ void loop() {
         if (log_cmd){
             t[counter] = delta_time;
             LAngle[counter] = LServo_getAngle();
-            RAngle[counter] = RServo_getAngle();
+            RAngle[counter] = esp_timer_get_time();
             UAngle[counter] = UServo_getAngle();
             BodyAngle[counter] = static_cast<int>(AccelGyroBody_getAngleXG());
         }
@@ -84,31 +89,40 @@ void loop() {
         }
 
         // sending data on request
-        if ((udp_command >= 105) & (udp_command <= 105))
-        UDP_toML(*log_pointers + (udp_command - 101), udp_data_vectors_length, counter, server_ipaddress, udp_port);
-
+        if ((udp_command >= 101) & (udp_command <= 106)){ // Serial.println("Y");
+        UDP_toML(*(log_pointers + (udp_command - 101)), udp_data_vectors_length, counter+1, server_ipaddress, udp_port);
+        }
         if (udp_command == CMD_ROTATE){
             RServo_setSpeed(20);
             LServo_setSpeed(20);
             UServo_setSpeed(20);
         }
 
-        if (udp_command == 211){
+        if (udp_command == 120){
             RServo_setAngle(10);
             LServo_setAngle(10);
         }
+        
+        if (udp_command == 120){
+            RServo_setSpeed(0);
+            LServo_setSpeed(0);
+        }
 
+        #ifdef DEBUG
         // the slowed piece
         if (slowdown > SD_SAMPLING_TIME)
         {
             slowdown = 0;
+            // AccelGyroBody_getAngleXGtild();
+
         }
         else
         {
             slowdown += delta_time;
         }
         counter < udp_data_vectors_length - 1 ? counter++ : counter = 0;
-    }
+        #endif
+    // }
 }
 
 
