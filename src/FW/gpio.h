@@ -24,16 +24,18 @@ int set_gpio(int channel, int value);
  */
 int get_gpio(int channel);
 
-void* initServo(int* FeedbackPIN, int* ControlPIN);
-void adjustServo(void* pServo, int* MinPWM, int* MaxPWM);
+void* initServo(int ControlPIN, int FeedbackPIN);
+void adjustServo(void* pServo, int MinPWM, int MaxPWM);
 void setMaxServoSpeed(void* pServo, int* DefMaxSpeed);
 
 int getServoAngle(void* pServo);
 float getServoSpeed(void* pServo);
 
-void setServoAngle(void* pServo, int* angle);
+void setServoAngle(void* pServo, int angle);
 void setServoSpeed(void* pServo, float* speed);
 void setServoOffset(void* pServo, int* offsetAngle);
+
+void calServo(void* ptrServo);
 
 // void LServo_init(void);
 // void RServo_init(void);

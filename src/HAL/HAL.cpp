@@ -11,7 +11,7 @@
 #include "WiFiUdp.h"
 
 #define DEBUG
-// #define PROTOTYPE
+//#define PROTOTYPE
 #define TEST_PLATE
 
 #ifdef TEST_PLATE
@@ -55,7 +55,7 @@
 
 using namespace std;
 
-ESP32Servo360 LServo, RServo, UServo;
+// ESP32Servo360 LServo, RServo, UServo;
 MPU6050 AccelgyroBody, AccellgyroLever;
 WiFiUDP udp;
 
@@ -67,84 +67,110 @@ Quaternion q;
 VectorFloat gravity;
 float ypr[3] = { 0 };
 
-void LServo_init(void){
-    LServo.attach(LSERVO_CONTROL_PIN,LSERVO_FEEDBACK_PIN);
-    LServo.adjustSignal(MIN_PWM,MAX_PWM);
-    LServo.setSpeed(DEFAULT_MAX_SPEED);
-    LServo.clearAngle();
-    LServo.setMinimalForce(8); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
+
+void* LServo_init(void){
+    void* LServo;
+    LServo = initServo(LSERVO_CONTROL_PIN, LSERVO_FEEDBACK_PIN);
+    Serial.print("1 dot.");
+    adjustServo(LServo, MIN_PWM, MAX_PWM);
+    // LServo.attach(LSERVO_CONTROL_PIN,LSERVO_FEEDBACK_PIN);
+    // LServo.adjustSignal(MIN_PWM,MAX_PWM);
+    // LServo.setSpeed(DEFAULT_MAX_SPEED);
+    // LServo.clearAngle();
+    // LServo.setMinimalForce(20); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
 
     #ifdef DEBUG
+
     Serial.print("The angle is: ");
-    Serial.println(LServo_getAngle());
+    Serial.println(getServoAngle(LServo));
     #endif
+
+    return LServo;
 }
-void RServo_init(void){
-    RServo.attach(RSERVO_CONTROL_PIN,RSERVO_FEEDBACK_PIN);
-    RServo.adjustSignal(MIN_PWM,MAX_PWM);
-    RServo.setSpeed(DEFAULT_MAX_SPEED);
-    RServo.setMinimalForce(8); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
-    RServo.rotateTo(0); // Setting accurate PWMs by comparing while spinning slowly.
-}
-void UServo_init(void){
-    UServo.attach(USERVO_CONTROL_PIN,USERVO_FEEDBACK_PIN);
-    UServo.adjustSignal(MIN_PWM,MAX_PWM);
-    UServo.setSpeed(DEFAULT_MAX_SPEED);
-    UServo.setMinimalForce(8); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
-    UServo.spin(-20);
-    usleep(2000);
-    UServo.setOffset(UServo_getAngle()); // Setting offset to the actual position
+// void RServo_init(void){
+//     RServo.attach(RSERVO_CONTROL_PIN,RSERVO_FEEDBACK_PIN);
+//     RServo.adjustSignal(MIN_PWM,MAX_PWM);
+//     RServo.setSpeed(DEFAULT_MAX_SPEED);
+//     RServo.clearAngle();
+//     RServo.setMinimalForce(20); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
+// }
+// void UServo_init(void){
+//     UServo.attach(USERVO_CONTROL_PIN,USERVO_FEEDBACK_PIN);
+//     UServo.adjustSignal(MIN_PWM,MAX_PWM);
+//     UServo.setSpeed(DEFAULT_MAX_SPEED);
+//     UServo.clearAngle();
+//     UServo.setMinimalForce(20); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
+// }
+
+// int LServo_getAngle(void){
+//     return (int)LServo.getAngle();
+// }
+// int RServo_getAngle(void){
+//     return (int)RServo.getAngle();
+// }
+// int UServo_getAngle(void){
+//     return (int)UServo.getAngle();
+// }
+
+// float LServo_getSpeed(void){
+//     return LServo.getSpeed();
+// }
+// float RServo_getSpeed(void){
+//     return RServo.getSpeed();
+// }
+// float UServo_getSpeed(void){
+//     return UServo.getSpeed();
+// }
+
+void setAngle(void* ptrServo, int angle){
+    setServoAngle(ptrServo, angle);
+    // (*(ESP32Servo360*)ptrServo).rotate(angle);
 }
 
-int LServo_getAngle(void){
-    return (int)LServo.getAngle();
-}
-int RServo_getAngle(void){
-    return (int)RServo.getAngle();
-}
-int UServo_getAngle(void){
-    return (int)UServo.getAngle();
+int getAngle(void* ptrServo){
+    return getServoAngle(ptrServo);
+    // (*(ESP32Servo360*)ptrServo).rotate(angle);
 }
 
-float LServo_getSpeed(void){
-    return LServo.getSpeed();
-}
-float RServo_getSpeed(void){
-    return RServo.getSpeed();
-}
-float UServo_getSpeed(void){
-    return UServo.getSpeed();
+void calibrate(void* ptrServo){
+    calServo(ptrServo);
 }
 
-void LServo_setAngle(int angle){
-    LServo.rotate(angle);
-}
-void RServo_setAngle(int angle){
-    RServo.rotate(angle);
-}
-void UServo_setAngle(int angle){
-    UServo.rotate(angle);
-}
+// void RServo_setAngle(int angle){
+//     RServo.rotate(angle);
+// }
+// void UServo_setAngle(int angle){
+//     UServo.rotate(angle);
+// }
 
-void LServo_setSpeed(float speed){
-    LServo.spin(speed);
-}
-void RServo_setSpeed(float speed){
-    RServo.spin(speed);
-}
-void UServo_setSpeed(float speed){
-    UServo.spin(speed);
-}
+// void LServo_setSpeed(float speed){
+//     LServo.spin(speed);
+// }
+// void RServo_setSpeed(float speed){
+//     RServo.spin(speed);
+// }
+// void UServo_setSpeed(float speed){
+//     UServo.spin(speed);
+// }
 
-void LServo_setOffset(int offsetAngle){
-    LServo.setOffset(offsetAngle);
-}
-void RServo_setOffset(int offsetAngle){
-    RServo.setOffset(offsetAngle);
-}
-void UServo_setOffset(int offsetAngle){
-    UServo.setOffset(offsetAngle);
-}
+// void LServo_setOffset(int offsetAngle){
+//     LServo.setOffset(offsetAngle);
+// }
+// void RServo_setOffset(int offsetAngle){
+//     RServo.setOffset(offsetAngle);
+// }
+// void UServo_setOffset(int offsetAngle){
+//     UServo.setOffset(offsetAngle);
+// }
+// void UServo_setPosition(int angle){
+//     UServo.rotateTo(angle);
+// }
+// void UServo_hold(){
+//     UServo.hold();
+// }
+// void UServo_release(){
+//     UServo.release();
+// }
 
 uint8_t mpuIntStatus = 0;
 uint8_t devStatus = 0;
@@ -384,4 +410,33 @@ long getTime(void){
 
 void sleep_us(int t){
     usleep(t);
+}
+
+int intDefLightState = 0;
+long longDefLightTimeStamp = 0;
+
+void onboardLight(int cmd, int intOn_ms, int intOff_ms) {
+    
+    longDefLightTimeStamp = getTime();
+
+    switch (cmd) { 
+    case 0: 
+        set_gpio(ONBOARD_LED, 0);
+        intDefLightState = 0;
+        break;
+    case 1:
+        switch (intDefLightState){
+        case 0:
+            set_gpio(ONBOARD_LED, 1);
+            if (getTime()-longDefLightTimeStamp > intOn_ms){    
+                intDefLightState = 1;
+            }
+            break;
+        case 1:
+            break;
+        }
+        break;
+    default:
+        break;
+    }
 }

@@ -18,7 +18,7 @@ ESP32Servo360::ESP32Servo360(int offsetAngle, int rpm, int deceleration, int min
     _orientationStamp = 0;
 
     _hold = false;
-    _pwmValue = -1; // unset
+    _tHigh = -1; // unset
     _deceleration = deceleration;
 };
 
@@ -131,10 +131,10 @@ void ESP32Servo360::calibrate(int show_origAngle)
         delay(1);
         _computeAngle();
 
-        if (_pwmValue < minPulseWidth && _pwmValue >= 0)
-            minPulseWidth = _pwmValue;
-        if (_pwmValue > maxPulseWidth && _pwmValue < 1500)
-            maxPulseWidth = _pwmValue;
+        if (_tHigh < minPulseWidth && _tHigh >= 0)
+            minPulseWidth = _tHigh;
+        if (_tHigh > maxPulseWidth && _tHigh < 1500)
+            maxPulseWidth = _tHigh;
     }
     rotateTo(origAngle);
     wait();
@@ -315,8 +315,8 @@ float ESP32Servo360::getSpeed()
 {
     float delta_time = (float)(esp_timer_get_time() - _timeStamp);
     
-    if (delta_time > 1e3F){
-        float newOrientation = _fmap(_pwmValue, _minPulseWidth, _maxPulseWidth, 0, 360);
+    if (delta_time > 1e3F){ // period is more than 1 ms - comparable to unloaded CPU period: up to 3 ms
+        float newOrientation = _fmap(_tHigh, _minPulseWidth, _tCycle, 0, 360);
         float delta_angle = newOrientation - _orientationStamp;
         wraparound(delta_angle);
         
@@ -416,7 +416,7 @@ void ESP32Servo360::stop()
  */
 void ESP32Servo360::_computeAngle()
 {
-    float newOrientation = _fmap(_pwmValue, _minPulseWidth, _maxPulseWidth, 0, 360);
+    float newOrientation = _fmap(_tHigh, _minPulseWidth, _tCycle, 0, 360);
     float delta = newOrientation - _orientation;
 
     wraparound(delta);
@@ -525,11 +525,12 @@ void ESP32Servo360::_isr(void *arg)
     {
         if (digitalRead(s->_feedbackPin))
         { // FALLING
+            s->_tCycle = esp_timer_get_time() - s->_prevTime;
             s->_prevTime = esp_timer_get_time();
         }
         else
         {
-            s->_pwmValue = esp_timer_get_time() - s->_prevTime;
+            s->_tHigh = esp_timer_get_time() - s->_prevTime;
         }
     }
 }

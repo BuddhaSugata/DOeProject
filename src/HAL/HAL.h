@@ -16,7 +16,7 @@ extern "C" {
 void set_onboard_led(int val);
 void get_onboard_led(void);
 
-void LServo_init(void);
+void* LServo_init(void);
 void RServo_init(void);
 void UServo_init(void);
 
@@ -28,7 +28,7 @@ float LServo_getSpeed(void);
 float RServo_getSpeed(void);
 float UServo_getSpeed(void);
 
-void LServo_setAngle(int angle);
+void setAngle(void* ptrServo, int angle);
 void RServo_setAngle(int angle);
 void UServo_setAngle(int angle);
 
@@ -39,6 +39,10 @@ void UServo_setSpeed(float speed);
 void LServo_setOffset(int offsetAngle);
 void RServo_setOffset(int offsetAngle);
 void UServo_setOffset(int offsetAngle);
+
+void UServo_setPosition(int angle);
+void UServo_hold(void);
+void UServo_release(void);
 
 void AccelGyroBody_init(void);
 void AccelGyroLever_init(void);
@@ -57,6 +61,11 @@ int UDP_read(void *ptr);
 
 long getTime(void);
 void sleep_us(int t);
+
+void calibrate(void* ptrServo);
+int getAngle(void* ptrServo);
+
+void onboardLight(int cmd, int intOn_ms, int intOff_ms);
 
 // class Servo{
 //     //consts
