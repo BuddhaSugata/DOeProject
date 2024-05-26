@@ -16,6 +16,8 @@ struct operating_mode{
 
 const operating_mode OM_INIT = { static_cast<int>(1000000), static_cast<int>(1000000) };
 const operating_mode OM_WORK = { static_cast<int>(1000000), static_cast<int>(10000000)};
+const operating_mode OM_ARTEM = { static_cast<int>(120000), static_cast<int>(120000)};
+const operating_mode OM_BLINK = { static_cast<int>(900000), static_cast<int>(100000)};
 
 void toggle_indication(const operating_mode* om);
 

@@ -45,30 +45,38 @@ float alpha = 0;
 
 void setup(){
     Serial.begin(115200); // Open the console to see the result of the calibration.
-    // pinMode(2, OUTPUT);
+    pinMode(2, OUTPUT);
 
-#ifdef PROTOTYPE
+// #ifdef PROTOTYPE
     
-#endif
-    UDP_attach(ssid, pwd, udp_port);
+// #endif
+//     UDP_attach(ssid, pwd, udp_port);
 
-    AccelGyroBody_init();
+//     AccelGyroBody_init();
 
-    LServo_init();
-    // RServo_init();
-    // UServo_init();
+//     LServo_init();
+//     // RServo_init();
+//     // UServo_init();
 
-    // generating of testing sequence (for udp correctness checking)
-    for (int i = 0; i<udp_data_vectors_length; i++)
-       *(testing_sequence+i) = i;
+//     // generating of testing sequence (for udp correctness checking)
+//     for (int i = 0; i<udp_data_vectors_length; i++)
+//        *(testing_sequence+i) = i;
 
-    sleep_us(1e6);
+//     sleep_us(1e6);
 }
 
 void loop() {
-    // toggle_indication(&OM_INIT);
+    toggle_indication(&OM_BLINK);
+    // Serial.print("Server to client: ");
+    // digitalWrite(2, HIGH);
+    // Serial.println("LED is on");
+    // delay(1000);
+    // digitalWrite(2, LOW);
+    // Serial.println("LED is off");
+    // delay(1000);
 
-    // if (getTime() > time_stamp + SAMPLING_TIME){
+
+   /*  // if (getTime() > time_stamp + SAMPLING_TIME){
         delta_time = getTime() - time_stamp;
         time_stamp = getTime();
 
@@ -122,7 +130,7 @@ void loop() {
         }
         counter < udp_data_vectors_length - 1 ? counter++ : counter = 0;
         #endif
-    // }
+    // } */
 }
 
 
