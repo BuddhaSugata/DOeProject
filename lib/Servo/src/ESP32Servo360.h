@@ -95,8 +95,7 @@ private:
     int _channel;
     int _minPulseWidth, _maxPulseWidth;
 
-    volatile uint16_t _tHigh;
-    volatile uint16_t _tCycle;
+    volatile uint16_t _pwmValue;
     volatile int64_t _prevTime;
     volatile int64_t _timeStamp;
 

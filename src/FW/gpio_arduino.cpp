@@ -16,25 +16,17 @@ int get_gpio(int channel){
     return true;
 }
 
-void* initServo(int ControlPIN, int FeedbackPIN){
-   ESP32Servo360* S = new ESP32Servo360;
-    (*S).attach(ControlPIN, FeedbackPIN);
-    Serial.print("2 dot.");
-    (*S).adjustSignal(2, 1000); // Setting manually the wrong PWMs, defaults are 32 & 1067, min then max.
-    Serial.print("21 dot.");
-    (*S).setMinimalForce(8); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
-    Serial.print("22 dot.");
-    (*S).calibrate(0); // Setting accurate PWMs by comparing while spinning slowly.
-    Serial.print("3 dot.");
-    return (void*)S;
+void* initServo(int* FeedbackPIN, int* ControlPIN){
+    Servo.attach(*FeedbackPIN, *ControlPIN);
+    return (void*)&Servo;
     // LServo.adjustSignal(2, 1000); // Setting manually the wrong PWMs, defaults are 32 & 1067, min then max.
     // LServo.setMinimalForce(8); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
     // LServo.calibrate(0); // Setting accurate PWMs by comparing while spinning slowly.
 }
 
-void adjustServo(void* pServo, int MinPWM, int MaxPWM){
+void adjustServo(void* pServo, int* MinPWM, int* MaxPWM){
     Servo = *(ESP32Servo360*)pServo;
-    Servo.adjustSignal(MinPWM, MaxPWM);
+    Servo.adjustSignal(*MinPWM, *MaxPWM);
 }
 
 void setMaxServoSpeed(void* pServo, int* DefMaxSpeed){
@@ -52,10 +44,9 @@ float getServoSpeed(void* pServo){
     return Servo.getSpeed();
 }
 
-void setServoAngle(void* pServo, int angle){
-    // Servo = *(ESP32Servo360*)pServo;
-    Serial.print("You are in the Foo setServoAngle");
-    (*(ESP32Servo360*)pServo).easeRotateTo(angle);
+void setServoAngle(void* pServo, int* angle){
+    Servo = *(ESP32Servo360*)pServo;
+    Servo.rotate(*angle);
 }
 
 void setServoSpeed(void* pServo, float* speed){
@@ -66,13 +57,6 @@ void setServoSpeed(void* pServo, float* speed){
 void setServoOffset(void* pServo, int* offsetAngle){
     Servo = *(ESP32Servo360*)pServo;
     Servo.setOffset(*offsetAngle);
-}
-
-void calServo(void* ptrServo){
-    (*(ESP32Servo360*)ptrServo).adjustSignal(2, 1000); // Setting manually the wrong PWMs, defaults are 32 & 1067, min then max.
-    (*(ESP32Servo360*)ptrServo).setMinimalForce(8); // Minimal force required for the servo to move. 7 is default. minimal force may barely move the servo, bigger force may do infinite bounces
-    (*(ESP32Servo360*)ptrServo).calibrate(0); // Setting accurate PWMs by comparing while spinning slowly.
-    Serial.print("Yohoho!");
 }
 // void RServo_init(void){
 //     RServo.attach(RSERVO_FEEDBACK_PIN,RSERVO_CONTROL_PIN);
